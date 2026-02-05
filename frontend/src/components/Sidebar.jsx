@@ -8,7 +8,7 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
   const { theme, toggleTheme } = useTheme();
   const [chats, setChats] = useState([]);
   const [users, setUsers] = useState([]);
-  const [view, setView] = useState("chats"); // 'chats' or 'users'
+  const [view, setView] = useState("chats"); // 'chats', 'users', 'world'
 
   // Fetch My Chats
   const fetchChats = async () => {
@@ -20,7 +20,6 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
     }
   };
 
-  // Fetch All Users (for new chat)
   const fetchUsers = async () => {
     try {
       const { data } = await api.get("/api/users");
@@ -30,15 +29,25 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
     }
   };
 
+  const accessGlobalChat = async () => {
+    try {
+      const { data } = await api.get("/api/chat/global");
+      setSelectedUser({ _id: "GLOBAL", name: "World Community" });
+      setConversation(data);
+    } catch (err) {
+      console.error("Failed to access global chat:", err);
+    }
+  };
+
   useEffect(() => {
     fetchChats();
   }, [setConversation]);
 
-  // Toggle View
-  const toggleView = () => {
-    if (view === "chats") {
-      setView("users");
-      fetchUsers();
+  // Handle Tab Switch
+  const handleTabChange = (tab) => {
+    if (tab === "world") {
+      setView("world");
+      accessGlobalChat();
     } else {
       setView("chats");
       fetchChats();
@@ -73,26 +82,43 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
     }
   };
 
+  // Generate consistent avatar colors based on name
+  const getAvatarGradient = (name) => {
+    const gradients = [
+      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+      "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+      "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+      "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+      "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)",
+      "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+    ];
+    const index = name ? name.charCodeAt(0) % gradients.length : 0;
+    return gradients[index];
+  };
+
   return (
     <div
       style={{
-        width: "300px",
+        width: "320px",
         background: "var(--sidebar-bg)",
         borderRight: "1px solid var(--sidebar-border)",
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        transition: "background 0.3s, border-color 0.3s",
+        transition: "all 0.3s ease",
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: "15px",
+          padding: "16px 20px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           background: "var(--header-bg)",
+          borderBottom: "1px solid var(--sidebar-border)",
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -116,141 +142,168 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
         </div>
 
         <button
-          onClick={toggleView}
-          title={view === 'chats' ? "New Chat" : "Back to Chats"}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-            color: "var(--primary-color)"
+          onClick={() => {
+            setView("users");
+            fetchUsers();
           }}
+          title="New Chat"
+          className="new-chat-btn"
         >
-          {view === 'chats' ? '➕' : '⬅'}
+          +
         </button>
       </div>
 
-      {/* SubHeader Title */}
+      {/* Tabs */}
       <div style={{
-        padding: "10px 15px",
-        fontWeight: "700",
-        fontSize: "1.3rem",
-        color: "var(--text-color)",
-        borderBottom: "1px solid var(--sidebar-border)"
+        display: "flex",
+        background: "var(--header-bg)",
+        padding: "0",
       }}>
-        {view === 'chats' ? 'Chats' : 'New Chat'}
+        <div
+          onClick={() => handleTabChange('chats')}
+          className={`sidebar-tab ${view === 'chats' || view === 'users' ? 'active' : ''}`}
+        >
+          💬 Chats
+        </div>
+        <div
+          onClick={() => handleTabChange('world')}
+          className={`sidebar-tab ${view === 'world' ? 'active' : ''}`}
+        >
+          🌍 World
+        </div>
       </div>
+
+      {/* SubHeader for User List */}
+      {view === 'users' && (
+        <div style={{
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          borderBottom: "1px solid var(--sidebar-border)",
+          color: "var(--text-color)",
+          fontWeight: "600",
+          background: "var(--hover-bg)",
+        }}>
+          <button
+            onClick={() => handleTabChange('chats')}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              color: "var(--text-color)",
+              padding: "4px 8px",
+              borderRadius: "6px",
+              transition: "background 0.2s"
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "var(--sidebar-border)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+          >
+            ←
+          </button>
+          Select User
+        </div>
+      )}
 
       {/* List */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        {view === "chats" ? (
-          chats.map((chat) => {
-            const otherUser = chat.participants.find((p) => p._id !== user._id);
-            if (!otherUser) return null;
+        {view === 'world' ? (
+          <div className="world-view-content">
+            <div className="world-icon">🌍</div>
+            <div style={{ fontWeight: '700', fontSize: '1.2rem', marginBottom: '8px' }}>
+              World Community
+            </div>
+            <div style={{
+              fontSize: '0.9rem',
+              color: 'var(--user-text)',
+              lineHeight: '1.5',
+              maxWidth: '200px',
+              margin: '0 auto'
+            }}>
+              Connect with everyone around the world in one global chat!
+            </div>
+            <div style={{
+              marginTop: '20px',
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, var(--primary-color) 0%, #00d4aa 100%)',
+              borderRadius: '25px',
+              color: 'white',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              display: 'inline-block',
+              boxShadow: '0 4px 15px rgba(0, 168, 132, 0.3)',
+            }}>
+              ✨ Chat is Open
+            </div>
+          </div>
+        ) : view === "chats" ? (
+          <div className="chats-view-content">
+            {chats.map((chat) => {
+              const otherUser = chat.participants.find((p) => p._id !== user._id);
+              if (!otherUser) return null;
 
-            return (
-              <div
-                key={chat._id}
-                onClick={() => handleChatClick(chat)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "12px 15px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid var(--sidebar-border)",
-                  color: "var(--text-color)",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--hover-bg)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                {/* Avatar */}
+              return (
                 <div
-                  style={{
-                    width: "45px",
-                    height: "45px",
-                    borderRadius: "50%",
-                    background: "#ddd",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: "15px",
-                    fontWeight: "bold",
-                    color: "#333",
-                    fontSize: "1.2rem"
-                  }}
+                  key={chat._id}
+                  onClick={() => handleChatClick(chat)}
+                  className="sidebar-list-item"
                 >
-                  {otherUser.name.charAt(0).toUpperCase()}
-                </div>
+                  {/* Avatar */}
+                  <div
+                    className="sidebar-avatar"
+                    style={{ background: getAvatarGradient(otherUser.name) }}
+                  >
+                    {otherUser.name.charAt(0).toUpperCase()}
+                  </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div style={{ fontWeight: "500", fontSize: "1rem" }}>{otherUser.name}</div>
-                  <div style={{
-                    fontSize: "13px",
-                    color: "var(--user-text)",
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}>
-                    {chat.lastMessage ? chat.lastMessage.content : "Start a conversation"}
+                  {/* Info */}
+                  <div style={{ flex: 1, overflow: "hidden" }}>
+                    <div style={{ fontWeight: "600", fontSize: "1rem", marginBottom: "2px" }}>
+                      {otherUser.name}
+                    </div>
+                    <div style={{
+                      fontSize: "13px",
+                      color: "var(--user-text)",
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
+                      {chat.lastMessage ? chat.lastMessage.content : "Start a conversation"}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         ) : (
-          users.map((u) => (
-            <div
-              key={u._id}
-              onClick={() => handleUserClick(u)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "12px 15px",
-                cursor: "pointer",
-                borderBottom: "1px solid var(--sidebar-border)",
-                color: "var(--text-color)",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "var(--hover-bg)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
-            >
+          <div className="chats-view-content">
+            {users.map((u) => (
               <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  background: "#ddd",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "15px",
-                  fontWeight: "bold",
-                  color: "#333"
-                }}
+                key={u._id}
+                onClick={() => handleUserClick(u)}
+                className="sidebar-list-item"
               >
-                {u.name.charAt(0).toUpperCase()}
+                <div
+                  className="sidebar-avatar"
+                  style={{ background: getAvatarGradient(u.name) }}
+                >
+                  {u.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight: "600" }}>{u.name}</div>
+                  <div style={{ fontSize: "12px", color: "var(--user-text)" }}>{u.email}</div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontWeight: "500" }}>{u.name}</div>
-                <div style={{ fontSize: "12px", color: "var(--user-text)" }}>{u.email}</div>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
       {/* Footer */}
       <div
         style={{
-          padding: "10px 15px",
+          padding: "12px 16px",
           borderTop: "1px solid var(--sidebar-border)",
           background: "var(--header-bg)",
           display: "flex",
@@ -259,22 +312,28 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
         }}
       >
         <div
-          style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            cursor: "pointer",
+            padding: "6px 10px",
+            borderRadius: "8px",
+            transition: "background 0.2s"
+          }}
           onClick={() => window.location.href = '/profile'}
           title="Go to Profile"
+          onMouseEnter={(e) => e.currentTarget.style.background = "var(--hover-bg)"}
+          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
         >
           <div
+            className="sidebar-avatar"
             style={{
-              width: "35px",
-              height: "35px",
-              borderRadius: "50%",
-              background: "#ddd",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "bold",
-              color: "#333",
-              fontSize: "1rem"
+              width: "36px",
+              height: "36px",
+              fontSize: "0.9rem",
+              marginRight: "0",
+              background: getAvatarGradient(user?.name)
             }}
           >
             {user?.name?.charAt(0).toUpperCase()}
@@ -284,19 +343,11 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "15px" }}>
+        <div style={{ display: "flex", gap: "8px" }}>
           <button
             onClick={toggleTheme}
             title="Toggle Theme"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              padding: "5px",
-              display: "flex",
-              alignItems: "center",
-            }}
+            className="footer-btn"
           >
             {theme === "light" ? "🌙" : "☀️"}
           </button>
@@ -304,20 +355,12 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
           <button
             onClick={() => window.location.href = '/settings'}
             title="Settings"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              padding: "5px",
-              display: "flex",
-              alignItems: "center",
-            }}
+            className="footer-btn"
           >
             ⚙️
           </button>
         </div>
       </div>
-    </div >
+    </div>
   );
 }
