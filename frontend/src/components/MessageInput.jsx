@@ -32,11 +32,11 @@ export default function MessageInput({
   return (
     <div
       style={{
-        padding: "10px",
+        padding: "10px 16px",
         display: "flex",
         alignItems: "center",
-        borderTop: "1px solid #ddd",
-        background: "#f0f2f5",
+        background: "var(--header-bg)",
+        borderTop: "1px solid var(--sidebar-border)",
       }}
     >
       <input
@@ -46,10 +46,13 @@ export default function MessageInput({
         placeholder="Type a message"
         style={{
           flex: 1,
-          padding: "10px 14px",
-          borderRadius: "20px",
-          border: "1px solid #ccc",
+          padding: "9px 16px",
+          borderRadius: "8px",
+          border: "1px solid var(--sidebar-border)",
           outline: "none",
+          background: "var(--input-bg)",
+          color: "var(--text-color)",
+          fontSize: "15px"
         }}
         onKeyDown={(e) => e.key === "Enter" && sendMessage()}
       />
@@ -58,12 +61,16 @@ export default function MessageInput({
         onClick={sendMessage}
         style={{
           marginLeft: "10px",
-          padding: "10px 14px",
+          padding: "10px",
           borderRadius: "50%",
           border: "none",
-          background: "#0b93f6",
-          color: "#fff",
-          fontSize: "16px",
+          background: "transparent",
+          color: "var(--primary-color)",
+          fontSize: "24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer"
         }}
       >
         ➤

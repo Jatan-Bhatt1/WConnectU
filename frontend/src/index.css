@@ -1,3 +1,36 @@
+:root {
+  --bg-color: #d1d7db;
+  /* WhatsApp web background mostly greyish outside app */
+  --text-color: #111b21;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e9edef;
+  --chat-bg: #efeae2;
+  /* WhatsApp Doodle BG color base */
+  --header-bg: #f0f2f5;
+  --input-bg: #ffffff;
+  --hover-bg: #f5f6f6;
+  --user-text: #667781;
+  --primary-color: #008069;
+  /* WhatsApp Teal */
+  --message-out: #d9fdd3;
+  --message-in: #ffffff;
+}
+
+.dark-mode {
+  --bg-color: #111b21;
+  --text-color: #e9edef;
+  --sidebar-bg: #111b21;
+  --sidebar-border: #202c33;
+  --chat-bg: #0b141a;
+  --header-bg: #202c33;
+  --input-bg: #2a3942;
+  --hover-bg: #202c33;
+  --user-text: #8696a0;
+  --primary-color: #00a884;
+  --message-out: #005c4b;
+  --message-in: #202c33;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5,7 +38,9 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont;
-  background: #f0f2f5;
+  background: var(--bg-color);
+  color: var(--text-color);
+  transition: background 0.3s, color 0.3s;
 }
 
 button {
