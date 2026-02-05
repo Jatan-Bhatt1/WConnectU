@@ -8,27 +8,35 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
+// Generate consistent avatar colors based on name
+const getAvatarGradient = (name) => {
+  const gradients = [
+    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+    "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)",
+    "linear-gradient(135deg, #00c6fb 0%, #005bea 100%)",
+  ];
+  const index = name ? name.charCodeAt(0) % gradients.length : 0;
+  return gradients[index];
+};
+
 const TopRightControls = () => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          fontSize: '1.2rem',
-          padding: '8px',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          color: 'var(--text-color)'
-        }}
+        className="footer-btn"
         title="Toggle Theme"
       >
-        {theme === 'light' ? '🌞' : '🌜'}
+        {theme === 'light' ? '🌜' : '☀️'}
       </button>
 
       {/* Profile Link */}
@@ -40,21 +48,27 @@ const TopRightControls = () => {
           gap: '10px',
           textDecoration: 'none',
           color: 'var(--text-color)',
-          fontWeight: '500'
+          fontWeight: '500',
+          padding: "6px 12px",
+          borderRadius: "25px",
+          transition: "background 0.2s ease"
         }}
+        onMouseEnter={(e) => e.currentTarget.style.background = "var(--hover-bg)"}
+        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
       >
-        <span>{user?.name}</span>
+        <span style={{ fontSize: "0.9rem" }}>{user?.name}</span>
         <div style={{
-          width: '32px',
-          height: '32px',
+          width: '34px',
+          height: '34px',
           borderRadius: '50%',
-          background: 'var(--primary-color)',
+          background: getAvatarGradient(user?.name),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
           fontWeight: 'bold',
-          fontSize: '14px'
+          fontSize: '14px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
         }}>
           {user?.name?.charAt(0).toUpperCase()}
         </div>
@@ -111,7 +125,7 @@ export default function ChatWindow({ selectedUser, conversation }) {
         style={{
           flex: 1,
           display: "flex",
-          flexDirection: "column", // Changed to column to stack header and content
+          flexDirection: "column",
           background: "var(--chat-bg)",
           color: "var(--text-color)"
         }}
@@ -120,8 +134,9 @@ export default function ChatWindow({ selectedUser, conversation }) {
         <div style={{
           display: 'flex',
           justifyContent: 'flex-end',
-          padding: '12px 20px',
-          borderBottom: '1px solid var(--sidebar-border)'
+          padding: '14px 24px',
+          borderBottom: '1px solid var(--sidebar-border)',
+          background: "var(--header-bg)"
         }}>
           <TopRightControls />
         </div>
@@ -129,16 +144,52 @@ export default function ChatWindow({ selectedUser, conversation }) {
         <div style={{
           flex: 1,
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--user-text)',
-          fontSize: '16px'
+          gap: '20px',
+          animation: 'fadeIn 0.5s ease'
         }}>
-          Select a chat to start messaging
+          <div style={{
+            width: "120px",
+            height: "120px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, var(--primary-color) 0%, #00d4aa 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "3rem",
+            boxShadow: "0 8px 30px rgba(0, 168, 132, 0.3)",
+            animation: "pulse 2s ease-in-out infinite"
+          }}>
+            💬
+          </div>
+          <div style={{
+            textAlign: 'center'
+          }}>
+            <div style={{
+              fontSize: '1.4rem',
+              fontWeight: '600',
+              color: 'var(--text-color)',
+              marginBottom: '8px'
+            }}>
+              Welcome to WconnectU
+            </div>
+            <div style={{
+              color: 'var(--user-text)',
+              fontSize: '0.95rem',
+              maxWidth: '300px',
+              lineHeight: '1.5'
+            }}>
+              Select a chat from the sidebar or start a new conversation
+            </div>
+          </div>
         </div>
       </div>
     );
   }
+
+  const isGlobalChat = selectedUser._id === "GLOBAL";
 
   return (
     <div
@@ -152,22 +203,57 @@ export default function ChatWindow({ selectedUser, conversation }) {
       {/* Header */}
       <div
         style={{
-          padding: "12px 16px",
+          padding: "14px 20px",
           background: "var(--header-bg)",
           borderBottom: "1px solid var(--sidebar-border)",
-          fontWeight: "500",
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          color: "var(--text-color)"
         }}
       >
-        <div>{selectedUser.name}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {/* Avatar */}
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: isGlobalChat
+              ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+              : getAvatarGradient(selectedUser.name),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: isGlobalChat ? '1.3rem' : '1.1rem',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
+          }}>
+            {isGlobalChat ? '🌍' : selectedUser.name?.charAt(0).toUpperCase()}
+          </div>
+
+          {/* Name and Status */}
+          <div>
+            <div style={{
+              fontWeight: "600",
+              fontSize: "1rem",
+              color: "var(--text-color)"
+            }}>
+              {selectedUser.name}
+            </div>
+            <div style={{
+              fontSize: "0.8rem",
+              color: "var(--user-text)"
+            }}>
+              {isGlobalChat ? "Everyone can see these messages" : "Online"}
+            </div>
+          </div>
+        </div>
+
         <TopRightControls />
       </div>
 
       {/* Messages */}
-      <MessageList messages={messages} />
+      <MessageList messages={messages} isGlobal={conversation?.isGlobal} />
 
       {/* Input */}
       <MessageInput
