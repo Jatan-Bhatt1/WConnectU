@@ -1,18 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
 
-import api from "../api/axios";
-import { useAuth } from "../context/AuthContext";
-
-export default function Login() {
-  const { login } = useAuth();
+export default function SignIn() {
   const sceneRef = useRef(null);
   const passwordRef = useRef(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -56,59 +46,18 @@ export default function Login() {
     };
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const res = await api.post("/api/auth/login", { email, password });
-      setLoading(false);
-      // Use AuthContext login to store user and token, then navigate
-      login(res.data);
-      navigate("/");
-    } catch (err) {
-      setLoading(false);
-      setError(
-        err?.response?.data?.message || "Login failed. Please try again."
-      );
-    }
-  };
-
   return (
     <>
       <style>{`
-        .login-outer-container {
-          min-height: 100vh;
-          width: 100vw;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-          }
-          .input-group {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          margin-bottom: 18px;
-        }
-        .input-group label {
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: #718096;
-          margin-bottom: 6px;
-          margin-left: 4px;
-        }
-        .input-group input {
-          width: 100%;
-          padding: 16px;
-          border-radius: 16px;
-          border: 2px solid #edf2f7;
-          background: #f7fafc;
-          font-size: 1rem;
-          margin-bottom: 2px;
-          transition: border-color 0.2s, box-shadow 0.2s;
-          box-sizing: border-box;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
+        .login-card {
+          background: rgba(255,255,255,0.95);
+          padding: 45px 40px;
+          border-radius: 30px;
+          width: 360px;
+          text-align: center;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.08),
                       0 10px 15px rgba(0,0,0,0.05);
         }
 
@@ -117,8 +66,50 @@ export default function Login() {
           height: 190px;
           margin-bottom: 25px;
           filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.15));
-          /* pointer-events: none; */
+          pointer-events: none;
         }
+
+        .eye {
+          transition: transform 0.1s;
+        }
+
+        .eye-open {
+          animation: blink 4s infinite;
+        }
+
+        @keyframes blink {
+          0%,48%,52%,100% { scale: 1 1; }
+          50% { scale: 1 0.1; }
+        }
+
+        .hand {
+          transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+          opacity: 0;
+        }
+
+        .password-mode .hand {
+          opacity: 1;
+          transform: translateY(-55px) !important;
+        }
+
+        .password-mode .eye {
+          animation: none;
+          transform: translate(0,0) !important;
+        }
+
+        .input-group {
+          margin-bottom: 18px;
+          text-align: left;
+        }
+
+        label {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #718096;
+        }
+
+        input {
+          width: 100%;
           padding: 16px;
           border-radius: 16px;
           border: 2px solid #edf2f7;
@@ -126,7 +117,7 @@ export default function Login() {
           font-size: 1rem;
         }
 
-        .input-group input:focus {
+        input:focus {
           outline: none;
           border-color: #6a2cff;
           box-shadow: 0 0 0 4px rgba(106,44,255,0.1);
@@ -144,31 +135,7 @@ export default function Login() {
         }
       `}</style>
 
-      <div style={{position: 'fixed', top: 18, left: 18, zIndex: 10}}>
-        <span style={{
-          fontFamily: 'DM Sans, sans-serif',
-          fontWeight: 800,
-          fontSize: '1.7rem',
-          letterSpacing: '0.5px',
-          background: 'white',
-          borderRadius: '12px',
-          padding: '2px 18px',
-          boxShadow: '0 2px 12px rgba(106,44,255,0.08)',
-          display: 'inline-block',
-        }}>
-          <span style={{color: '#834dff'}}>W</span>
-          <span style={{color: '#718096'}}>c</span>
-          <span style={{color: '#ff9f43'}}>o</span>
-          <span style={{color: '#718096'}}>n</span>
-          <span style={{color: '#3b5bdb'}}>n</span>
-          <span style={{color: '#718096'}}>e</span>
-          <span style={{color: '#1c1c1c'}}>c</span>
-          <span style={{color: '#718096'}}>t</span>
-          <span style={{color: '#ffd400', fontWeight: 900}}>U</span>
-        </span>
-      </div>
-      <div className="login-outer-container">
-        <div className="login-card">
+      <div className="login-card">
         <svg ref={sceneRef} viewBox="0 0 320 230">
           <defs>
             <linearGradient id="grad-purple" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -232,41 +199,18 @@ export default function Login() {
 
         <h2>Welcome Back</h2>
         <p>Enter your credentials to access your account.</p>
-        <form onSubmit={handleSubmit} autoComplete="off">
-          <div className="input-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              placeholder="name@company.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoComplete="off"
-              required
-            />
-          </div>
-          <div className="input-group">
-            <label>Password</label>
-            <input
-              ref={passwordRef}
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="off"
-              required
-            />
-          </div>
-          {error && (
-            <div style={{ color: '#e53e3e', marginBottom: 12, fontWeight: 500 }}>{error}</div>
-          )}
-          <button type="submit" disabled={loading}>
-            {loading ? "Signing In..." : "Sign In"}
-          </button>
-        </form>
-        <div style={{ marginTop: 18, fontSize: '0.97rem' }}>
-          Don't have an account? <Link to="/register" style={{ color: '#6a2cff', fontWeight: 600 }}>Sign Up</Link>
+
+        <div className="input-group">
+          <label>Email Address</label>
+          <input type="email" placeholder="name@company.com" />
         </div>
+
+        <div className="input-group">
+          <label>Password</label>
+          <input ref={passwordRef} type="password" placeholder="••••••••" />
         </div>
+
+        <button>Sign In</button>
       </div>
     </>
   );
