@@ -82,7 +82,7 @@ export default function MessageList({ messages, isGlobal }) {
                   ? "linear-gradient(135deg, var(--message-out) 0%, var(--message-out) 100%)"
                   : "var(--message-in)",
                 color: "var(--text-color)",
-                padding: "10px 14px",
+                padding: msg.type === "image" ? "4px" : "10px 14px",
                 borderRadius: "18px",
                 borderTopRightRadius: isMe ? "4px" : "18px",
                 borderTopLeftRadius: !isMe ? "4px" : "18px",
@@ -93,7 +93,8 @@ export default function MessageList({ messages, isGlobal }) {
                 fontSize: "14.5px",
                 lineHeight: "1.45",
                 position: "relative",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease"
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                overflow: "hidden",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "scale(1.01)";
@@ -114,12 +115,31 @@ export default function MessageList({ messages, isGlobal }) {
                   fontWeight: "700",
                   color: getSenderColor(msg.sender.name),
                   marginBottom: "4px",
-                  letterSpacing: "0.3px"
+                  letterSpacing: "0.3px",
+                  padding: msg.type === "image" ? "6px 8px 2px" : "0"
                 }}>
                   {msg.sender.name}
                 </div>
               )}
-              <div style={{ wordWrap: "break-word" }}>{msg.content}</div>
+
+              {msg.type === "image" ? (
+                <div style={{ position: "relative" }}>
+                  <img
+                    src={msg.content.startsWith("/uploads") ? `http://localhost:5000${msg.content}` : msg.content}
+                    alt="Sent image"
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "300px",
+                      borderRadius: "14px",
+                      display: "block",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => window.open(msg.content.startsWith("/uploads") ? `http://localhost:5000${msg.content}` : msg.content, "_blank")}
+                  />
+                </div>
+              ) : (
+                <div style={{ wordWrap: "break-word" }}>{msg.content}</div>
+              )}
 
               <div
                 style={{
@@ -131,7 +151,8 @@ export default function MessageList({ messages, isGlobal }) {
                   justifyContent: "flex-end",
                   alignItems: "center",
                   gap: "4px",
-                  opacity: 0.8
+                  opacity: 0.8,
+                  padding: msg.type === "image" ? "0 8px 4px" : "0"
                 }}
               >
                 {new Date(msg.createdAt).toLocaleTimeString([], {

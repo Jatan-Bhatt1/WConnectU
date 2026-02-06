@@ -337,6 +337,14 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
           <div className="chats-view-content">
             {users
               .filter((u) => {
+                // Exclude users who already have a conversation
+                const existingChatUserIds = chats.map((chat) => {
+                  const otherUser = chat.participants.find((p) => p._id !== user._id);
+                  return otherUser?._id;
+                });
+                if (existingChatUserIds.includes(u._id)) return false;
+
+                // Search filter
                 if (!searchQuery.trim()) return true;
                 const query = searchQuery.toLowerCase();
                 return (
@@ -399,10 +407,12 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
               height: "36px",
               fontSize: "0.9rem",
               marginRight: "0",
-              background: getAvatarGradient(user?.name)
+              background: user?.avatar
+                ? `url(http://localhost:5000${user.avatar}) center/cover`
+                : getAvatarGradient(user?.name)
             }}
           >
-            {user?.name?.charAt(0).toUpperCase()}
+            {!user?.avatar && user?.name?.charAt(0).toUpperCase()}
           </div>
           <div style={{ fontSize: "0.9rem", fontWeight: "600", color: "var(--text-color)" }}>
             Profile
