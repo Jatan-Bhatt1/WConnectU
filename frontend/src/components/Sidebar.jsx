@@ -9,6 +9,7 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
   const [chats, setChats] = useState([]);
   const [users, setUsers] = useState([]);
   const [view, setView] = useState("chats"); // 'chats', 'users', 'world'
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch My Chats
   const fetchChats = async () => {
@@ -175,35 +176,91 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
 
       {/* SubHeader for User List */}
       {view === 'users' && (
-        <div style={{
-          padding: "12px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          borderBottom: "1px solid var(--sidebar-border)",
-          color: "var(--text-color)",
-          fontWeight: "600",
-          background: "var(--hover-bg)",
-        }}>
-          <button
-            onClick={() => handleTabChange('chats')}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              color: "var(--text-color)",
-              padding: "4px 8px",
-              borderRadius: "6px",
-              transition: "background 0.2s"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = "var(--sidebar-border)"}
-            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-          >
-            ←
-          </button>
-          Select User
-        </div>
+        <>
+          <div style={{
+            padding: "12px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            borderBottom: "1px solid var(--sidebar-border)",
+            color: "var(--text-color)",
+            fontWeight: "600",
+            background: "var(--hover-bg)",
+          }}>
+            <button
+              onClick={() => {
+                handleTabChange('chats');
+                setSearchQuery("");
+              }}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "1.2rem",
+                color: "var(--text-color)",
+                padding: "4px 8px",
+                borderRadius: "6px",
+                transition: "background 0.2s"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "var(--sidebar-border)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              ←
+            </button>
+            Select User
+          </div>
+          {/* Search Input */}
+          <div style={{
+            padding: "10px 16px",
+            borderBottom: "1px solid var(--sidebar-border)",
+          }}>
+            <div style={{ position: "relative" }}>
+              <svg
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: "18px",
+                  height: "18px",
+                  color: "var(--user-text)",
+                }}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name or email..."
+                style={{
+                  width: "100%",
+                  padding: "10px 12px 10px 40px",
+                  borderRadius: "20px",
+                  border: "none",
+                  outline: "none",
+                  background: "var(--input-bg)",
+                  color: "var(--text-color)",
+                  fontSize: "14px",
+                  transition: "box-shadow 0.2s ease",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-color)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              />
+            </div>
+          </div>
+        </>
       )}
 
       {/* List */}
@@ -278,24 +335,33 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
           </div>
         ) : (
           <div className="chats-view-content">
-            {users.map((u) => (
-              <div
-                key={u._id}
-                onClick={() => handleUserClick(u)}
-                className="sidebar-list-item"
-              >
+            {users
+              .filter((u) => {
+                if (!searchQuery.trim()) return true;
+                const query = searchQuery.toLowerCase();
+                return (
+                  u.name.toLowerCase().includes(query) ||
+                  u.email.toLowerCase().includes(query)
+                );
+              })
+              .map((u) => (
                 <div
-                  className="sidebar-avatar"
-                  style={{ background: getAvatarGradient(u.name) }}
+                  key={u._id}
+                  onClick={() => handleUserClick(u)}
+                  className="sidebar-list-item"
                 >
-                  {u.name.charAt(0).toUpperCase()}
+                  <div
+                    className="sidebar-avatar"
+                    style={{ background: getAvatarGradient(u.name) }}
+                  >
+                    {u.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: "600" }}>{u.name}</div>
+                    <div style={{ fontSize: "12px", color: "var(--user-text)" }}>{u.email}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontWeight: "600" }}>{u.name}</div>
-                  <div style={{ fontSize: "12px", color: "var(--user-text)" }}>{u.email}</div>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>

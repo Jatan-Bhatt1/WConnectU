@@ -1,6 +1,46 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import api from "../api/axios";
 import socket from "../sockets/socket";
+
+// Emoji categories with popular emojis
+const emojiCategories = {
+  "😊 Smileys": [
+    "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "😊",
+    "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙", "🥲", "😋",
+    "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐",
+    "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "🤥", "😌",
+    "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧"
+  ],
+  "❤️ Hearts": [
+    "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+    "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "♥️"
+  ],
+  "👋 Gestures": [
+    "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞",
+    "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍",
+    "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🙏"
+  ],
+  "🎉 Celebration": [
+    "🎉", "🎊", "🎈", "🎁", "🎂", "🍰", "🧁", "🥳", "🪅", "🎆",
+    "🎇", "✨", "🎄", "🎃", "🎗️", "🎟️", "🎫", "🏆", "🥇", "🏅"
+  ],
+  "🔥 Popular": [
+    "🔥", "💯", "✅", "⭐", "🌟", "💫", "⚡", "💥", "💢", "💤",
+    "💨", "💦", "🎵", "🎶", "🎤", "🎧", "📱", "💻", "🖥️", "⌨️"
+  ],
+  "🐱 Animals": [
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+    "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🦆", "🦅"
+  ],
+  "🍕 Food": [
+    "🍕", "🍔", "🍟", "🌭", "🍿", "🧂", "🥓", "🥚", "🍳", "🧇",
+    "🥞", "🧈", "🍞", "🥐", "🥨", "🧀", "🥗", "🍝", "🍜", "🍲"
+  ],
+  "⚽ Sports": [
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱",
+    "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🏹", "🎣"
+  ]
+};
 
 export default function MessageInput({
   conversationId,
@@ -9,11 +49,44 @@ export default function MessageInput({
 }) {
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("😊 Smileys");
+  const emojiPickerRef = useRef(null);
+  const emojiButtonRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        showEmojiPicker &&
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target) &&
+        emojiButtonRef.current &&
+        !emojiButtonRef.current.contains(event.target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showEmojiPicker]);
+
+  const handleEmojiClick = (emoji) => {
+    setText((prev) => prev + emoji);
+    inputRef.current?.focus();
+  };
+
+  const toggleEmojiPicker = () => {
+    setShowEmojiPicker((prev) => !prev);
+  };
 
   const sendMessage = async () => {
     if (!text.trim() || isSending) return;
 
     setIsSending(true);
+    setShowEmojiPicker(false);
     try {
       const { data } = await api.post("/api/chat/message", {
         conversationId,
@@ -43,12 +116,132 @@ export default function MessageInput({
         gap: "12px",
         background: "var(--header-bg)",
         borderTop: "1px solid var(--sidebar-border)",
+        position: "relative",
       }}
     >
+      {/* Emoji Picker Popup */}
+      {showEmojiPicker && (
+        <div
+          ref={emojiPickerRef}
+          style={{
+            position: "absolute",
+            bottom: "70px",
+            left: "20px",
+            width: "340px",
+            height: "380px",
+            background: "var(--sidebar-bg)",
+            borderRadius: "16px",
+            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.3)",
+            border: "1px solid var(--sidebar-border)",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            animation: "slideUp 0.2s ease-out",
+            zIndex: 1000,
+          }}
+        >
+          {/* Category Tabs */}
+          <div
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              borderBottom: "1px solid var(--sidebar-border)",
+              padding: "8px 8px 0",
+              gap: "4px",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
+          >
+            {Object.keys(emojiCategories).map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                style={{
+                  padding: "8px 12px",
+                  border: "none",
+                  background: activeCategory === category
+                    ? "var(--primary-color)"
+                    : "transparent",
+                  borderRadius: "8px 8px 0 0",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  color: activeCategory === category
+                    ? "white"
+                    : "var(--text-color)",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.2s ease",
+                  fontWeight: activeCategory === category ? "600" : "400",
+                }}
+              >
+                {category.split(" ")[0]}
+              </button>
+            ))}
+          </div>
+
+          {/* Category Label */}
+          <div
+            style={{
+              padding: "10px 14px 6px",
+              fontSize: "0.8rem",
+              fontWeight: "600",
+              color: "var(--user-text)",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            {activeCategory}
+          </div>
+
+          {/* Emoji Grid */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "0 10px 10px",
+              display: "grid",
+              gridTemplateColumns: "repeat(8, 1fr)",
+              gap: "4px",
+              alignContent: "start",
+            }}
+          >
+            {emojiCategories[activeCategory].map((emoji, index) => (
+              <button
+                key={index}
+                onClick={() => handleEmojiClick(emoji)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "1.5rem",
+                  padding: "6px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--hover-bg)";
+                  e.currentTarget.style.transform = "scale(1.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Emoji Button */}
       <button
+        ref={emojiButtonRef}
+        onClick={toggleEmojiPicker}
         style={{
-          background: "transparent",
+          background: showEmojiPicker ? "var(--hover-bg)" : "transparent",
           border: "none",
           fontSize: "1.4rem",
           cursor: "pointer",
@@ -58,14 +251,17 @@ export default function MessageInput({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          transform: showEmojiPicker ? "scale(1.1)" : "scale(1)",
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "var(--hover-bg)";
           e.currentTarget.style.transform = "scale(1.1)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.transform = "scale(1)";
+          if (!showEmojiPicker) {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.transform = "scale(1)";
+          }
         }}
         title="Emojis"
       >
@@ -75,6 +271,7 @@ export default function MessageInput({
       {/* Input Field */}
       <div style={{ flex: 1, position: "relative" }}>
         <input
+          ref={inputRef}
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -124,9 +321,16 @@ export default function MessageInput({
           e.currentTarget.style.background = "transparent";
           e.currentTarget.style.transform = "scale(1)";
         }}
-        title="Attach File"
+        title="Attach Image"
       >
-        📎
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+        </svg>
       </button>
 
       {/* Send Button */}
