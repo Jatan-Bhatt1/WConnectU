@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 
 // GET ALL USERS (except self)
 export const getUsers = async (req, res, next) => {
@@ -71,6 +72,67 @@ export const blockUser = async (req, res, next) => {
     });
 
     res.json({ message: "User blocked" });
+  } catch (error) {
+    next(error);
+  }
+};
+// UPDATE PROFILE
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name },
+      { new: true }
+    ).select("-password");
+
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// UPDATE PASSWORD
+export const updatePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user._id).select("+password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid old password" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// UPDATE SETTINGS
+export const updateSettings = async (req, res, next) => {
+  try {
+    const { privacy } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { privacy },
+      { new: true }
+    ).select("-password");
+
+    res.json(user);
   } catch (error) {
     next(error);
   }

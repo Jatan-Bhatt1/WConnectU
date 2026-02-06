@@ -7,11 +7,19 @@ import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*", // later restrict to frontend URL
+  },
+});
 
 /* =======================
    Middleware
@@ -19,11 +27,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Attach io to req
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 /* =======================
    Routes
 ======================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -44,16 +59,8 @@ app.use((err, req, res, next) => {
 });
 
 /* =======================
-   Socket.IO Setup
+   Socket.IO Logic
 ======================= */
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: "*", // later restrict to frontend URL
-  },
-});
-
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
@@ -65,7 +72,11 @@ io.on("connection", (socket) => {
 
   // send message
   socket.on("sendMessage", ({ receiverId, message }) => {
-    io.to(receiverId).emit("receiveMessage", message);
+    if (receiverId === "GLOBAL") {
+      socket.broadcast.emit("receiveMessage", message);
+    } else {
+      io.to(receiverId).emit("receiveMessage", message);
+    }
   });
 
   socket.on("disconnect", () => {
