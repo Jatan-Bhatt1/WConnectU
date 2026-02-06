@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 export default function Profile() {
-  const { user, login, logout } = useAuth();
+  const { user, login, logout, updateUser } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [name, setName] = useState(user?.name || "");
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || "");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
     newPassword: "",
@@ -18,6 +21,38 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [profileMessage, setProfileMessage] = useState({ type: "", text: "" });
   const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const { data } = await api.put("/api/users/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      updateUser({ avatar: data.avatar });
+      setAvatarPreview(data.avatar);
+      setProfileMessage({ type: "success", text: "Avatar updated!" });
+    } catch (err) {
+      setProfileMessage({ type: "error", text: "Failed to upload avatar" });
+      setAvatarPreview(user?.avatar || "");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -119,26 +154,106 @@ export default function Profile() {
     width: "100%",
   };
 
+  const getAvatarUrl = () => {
+    if (!avatarPreview) return null;
+    if (avatarPreview.startsWith("data:")) return avatarPreview;
+    if (avatarPreview.startsWith("/uploads")) return `http://localhost:5000${avatarPreview}`;
+    return avatarPreview;
+  };
+
   return (
     <div style={{ padding: "20px", minHeight: "100vh", background: "var(--bg-color)" }}>
       <button
         onClick={() => navigate("/")}
+        className="back-button"
         style={{
-          background: 'transparent',
-          border: 'none',
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          background: 'var(--header-bg)',
+          border: '1px solid var(--sidebar-border)',
           color: 'var(--text-color)',
-          fontSize: '1rem',
-          marginBottom: '20px',
+          fontSize: '0.95rem',
+          padding: '10px 20px',
+          borderRadius: '30px',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px'
+          gap: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+          transition: 'all 0.3s ease',
+          backdropFilter: 'blur(10px)',
+          zIndex: 10,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)';
+          e.currentTarget.style.borderColor = 'var(--primary-color)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
+          e.currentTarget.style.borderColor = 'var(--sidebar-border)';
         }}
       >
-        ← Back to Chat
+        <span style={{ fontSize: '1.2rem', marginBottom: '2px' }}>←</span>
+        Back to Chat
       </button>
 
       <div style={containerStyle}>
         <h2 style={{ textAlign: "center", marginBottom: "30px" }}>Edit Profile</h2>
+
+        {/* Avatar Section */}
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+              margin: "0 auto 15px",
+              background: getAvatarUrl() ? `url(${getAvatarUrl()}) center/cover` : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              border: "4px solid var(--primary-color)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {!getAvatarUrl() && (
+              <span style={{ color: "white", fontSize: "48px", fontWeight: "bold" }}>
+                {user?.name?.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: "rgba(0,0,0,0.6)",
+                color: "white",
+                padding: "5px",
+                fontSize: "12px",
+              }}
+            >
+              {uploadingAvatar ? "Uploading..." : "📷 Change"}
+            </div>
+          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleAvatarChange}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+          <p style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+            Click avatar to change photo
+          </p>
+        </div>
 
         {/* Update Profile Form */}
         <form onSubmit={handleUpdateProfile} style={{ marginBottom: "40px" }}>
@@ -250,6 +365,33 @@ export default function Profile() {
           }}
         >
           Logout
+        </button>
+
+        <button
+          onClick={async () => {
+            const confirmed = window.confirm(
+              "Are you sure you want to delete your account? This action cannot be undone!"
+            );
+            if (!confirmed) return;
+
+            try {
+              await api.delete("/api/users/me");
+              logout();
+              navigate("/login");
+            } catch (err) {
+              alert("Failed to delete account. Please try again.");
+              console.error(err);
+            }
+          }}
+          style={{
+            ...buttonStyle,
+            marginTop: '15px',
+            background: 'transparent',
+            border: '2px solid #dc2626',
+            color: '#dc2626',
+          }}
+        >
+          🗑️ Delete Account
         </button>
       </div>
     </div>

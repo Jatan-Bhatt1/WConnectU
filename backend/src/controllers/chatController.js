@@ -96,6 +96,36 @@ export const sendMessage = async (req, res, next) => {
   }
 };
 
+// SEND IMAGE MESSAGE
+export const sendImageMessage = async (req, res, next) => {
+  try {
+    const { conversationId } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file uploaded" });
+    }
+
+    const imageUrl = req.file.path;
+
+    const message = await Message.create({
+      sender: req.user._id,
+      content: imageUrl,
+      conversation: conversationId,
+      type: "image",
+    });
+
+    await Conversation.findByIdAndUpdate(conversationId, {
+      lastMessage: message._id,
+    });
+
+    await message.populate("sender", "name email");
+
+    res.status(201).json(message);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // GET MESSAGES
 export const getMessages = async (req, res, next) => {
   try {

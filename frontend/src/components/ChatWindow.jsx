@@ -28,6 +28,12 @@ const TopRightControls = () => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
+  const getAvatarUrl = (avatar) => {
+    if (!avatar) return null;
+    if (avatar.startsWith("/uploads")) return `http://localhost:5000${avatar}`;
+    return avatar;
+  };
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
       {/* Theme Toggle */}
@@ -61,7 +67,9 @@ const TopRightControls = () => {
           width: '34px',
           height: '34px',
           borderRadius: '50%',
-          background: getAvatarGradient(user?.name),
+          background: getAvatarUrl(user?.avatar)
+            ? `url(${getAvatarUrl(user?.avatar)}) center/cover`
+            : getAvatarGradient(user?.name),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -70,7 +78,7 @@ const TopRightControls = () => {
           fontSize: '14px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
         }}>
-          {user?.name?.charAt(0).toUpperCase()}
+          {!getAvatarUrl(user?.avatar) && user?.name?.charAt(0).toUpperCase()}
         </div>
       </Link>
     </div>

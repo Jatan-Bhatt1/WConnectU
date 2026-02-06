@@ -137,3 +137,34 @@ export const updateSettings = async (req, res, next) => {
     next(error);
   }
 };
+
+// DELETE ACCOUNT
+export const deleteAccount = async (req, res, next) => {
+  try {
+    await User.findByIdAndDelete(req.user._id);
+    res.json({ message: "Account deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// UPDATE AVATAR
+export const updateAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const avatarUrl = req.file.path;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { avatar: avatarUrl },
+      { new: true }
+    ).select("-password");
+
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+};

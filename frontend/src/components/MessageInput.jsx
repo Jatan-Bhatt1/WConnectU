@@ -51,9 +51,13 @@ export default function MessageInput({
   const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeCategory, setActiveCategory] = useState("😊 Smileys");
+  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imageCaption, setImageCaption] = useState("");
   const emojiPickerRef = useRef(null);
   const emojiButtonRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -80,6 +84,107 @@ export default function MessageInput({
 
   const toggleEmojiPicker = () => {
     setShowEmojiPicker((prev) => !prev);
+  };
+
+  // Compress image using Canvas API
+  const compressImage = (file, maxWidth = 1200, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+
+          // Resize if larger than maxWidth
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to blob with compression
+          canvas.toBlob(
+            (blob) => {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            "image/jpeg",
+            quality
+          );
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // When image is selected, compress and show preview
+  const handleImageSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file");
+      return;
+    }
+
+    // Compress the image
+    const compressedFile = await compressImage(file);
+    console.log(`Compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
+
+    setSelectedFile(compressedFile);
+    setImagePreview(URL.createObjectURL(compressedFile));
+    setImageCaption("");
+  };
+
+  // Cancel image preview
+  const cancelImagePreview = () => {
+    setImagePreview(null);
+    setSelectedFile(null);
+    setImageCaption("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Send image with optional caption
+  const sendImageWithCaption = async () => {
+    if (!selectedFile || isSending) return;
+
+    setIsSending(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", selectedFile);
+      formData.append("conversationId", conversationId);
+      if (imageCaption.trim()) {
+        formData.append("caption", imageCaption.trim());
+      }
+
+      const { data } = await api.post("/api/chat/message/image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      socket.emit("sendMessage", {
+        receiverId,
+        message: data,
+      });
+
+      setMessages((prev) => [...prev, data]);
+      cancelImagePreview();
+    } catch (err) {
+      console.error("Failed to send image:", err);
+      alert("Failed to send image");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const sendMessage = async () => {
@@ -119,6 +224,119 @@ export default function MessageInput({
         position: "relative",
       }}
     >
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImageSelect}
+        accept="image/*"
+        style={{ display: "none" }}
+      />
+
+      {/* Image Preview Modal */}
+      {imagePreview && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.8)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "20px",
+          }}
+          onClick={cancelImagePreview}
+        >
+          <div
+            style={{
+              background: "var(--sidebar-bg)",
+              borderRadius: "16px",
+              padding: "20px",
+              maxWidth: "500px",
+              width: "90%",
+              maxHeight: "80vh",
+              overflow: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+              <span style={{ fontWeight: "bold", color: "var(--text-color)" }}>Send Image</span>
+              <button
+                onClick={cancelImagePreview}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                  color: "var(--text-color)",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Image Preview */}
+            <img
+              src={imagePreview}
+              alt="Preview"
+              style={{
+                width: "100%",
+                maxHeight: "300px",
+                objectFit: "contain",
+                borderRadius: "8px",
+                marginBottom: "12px",
+              }}
+            />
+
+            {/* Caption Input */}
+            <input
+              type="text"
+              placeholder="Add a caption... (optional)"
+              value={imageCaption}
+              onChange={(e) => setImageCaption(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendImageWithCaption()}
+              style={{
+                width: "100%",
+                padding: "12px",
+                border: "1px solid var(--sidebar-border)",
+                borderRadius: "8px",
+                background: "var(--chat-bg)",
+                color: "var(--text-color)",
+                fontSize: "14px",
+                marginBottom: "12px",
+                outline: "none",
+              }}
+              autoFocus
+            />
+
+            {/* Send Button */}
+            <button
+              onClick={sendImageWithCaption}
+              disabled={isSending}
+              style={{
+                width: "100%",
+                padding: "12px",
+                background: "linear-gradient(135deg, #00a884 0%, #00d4aa 100%)",
+                border: "none",
+                borderRadius: "8px",
+                color: "white",
+                fontWeight: "bold",
+                cursor: isSending ? "not-allowed" : "pointer",
+                opacity: isSending ? 0.7 : 1,
+              }}
+            >
+              {isSending ? "Sending..." : "Send"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Emoji Picker Popup */}
       {showEmojiPicker && (
         <div
@@ -300,6 +518,7 @@ export default function MessageInput({
 
       {/* Attachment Button */}
       <button
+        onClick={() => fileInputRef.current?.click()}
         style={{
           background: "transparent",
           border: "none",
