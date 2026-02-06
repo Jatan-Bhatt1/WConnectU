@@ -12,8 +12,12 @@ const conversationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
     },
+    isGlobal:{
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  {timestamps: true}
 );
 
 export default mongoose.model("Conversation", conversationSchema);

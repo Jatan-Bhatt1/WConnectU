@@ -30,6 +30,17 @@ const userSchema = new mongoose.Schema(
     lastSeen: {
       type: Date,
     },
+    privacy: {
+      lastSeen: {
+        type: String,
+        enum: ["Everyone", "My Contacts", "Nobody"],
+        default: "Everyone",
+      },
+      readReceipts: {
+        type: Boolean,
+        default: true,
+      },
+    },
   },
   { timestamps: true }
 );
