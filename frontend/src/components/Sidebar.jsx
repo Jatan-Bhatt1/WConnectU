@@ -3,7 +3,7 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
-export default function Sidebar({ setSelectedUser, setConversation }) {
+export default function Sidebar({ setSelectedUser, setConversation, refreshTrigger }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [chats, setChats] = useState([]);
@@ -42,7 +42,7 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
 
   useEffect(() => {
     fetchChats();
-  }, [setConversation]);
+  }, [setConversation, refreshTrigger]);
 
   // Handle Tab Switch
   const handleTabChange = (tab) => {
@@ -103,12 +103,17 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
     <div
       style={{
         width: "320px",
-        background: "var(--sidebar-bg)",
-        borderRight: "1px solid var(--sidebar-border)",
+        minWidth: "320px",
+        flexShrink: 0,
+        background: "rgba(255,255,255,0.03)",
+        backdropFilter: "blur(20px)",
+        borderRight: "1px solid rgba(255,255,255,0.1)",
         height: "100vh",
         display: "flex",
         flexDirection: "column",
         transition: "all 0.3s ease",
+        position: "relative",
+        zIndex: 2,
       }}
     >
       {/* Header */}
@@ -118,8 +123,9 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          background: "var(--header-bg)",
-          borderBottom: "1px solid var(--sidebar-border)",
+          background: "rgba(255,255,255,0.05)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -136,7 +142,7 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
             <span style={{ color: '#718096' }}>n</span>
             <span style={{ color: '#3b5bdb' }}>n</span>
             <span style={{ color: '#718096' }}>e</span>
-            <span style={{ color: '#1c1c1c' }}>c</span>
+            <span style={{ color: '#f0f0f0' }}>c</span>
             <span style={{ color: '#718096' }}>t</span>
             <span style={{ color: '#ffd400', fontWeight: 900 }}>U</span>
           </span>
@@ -267,7 +273,26 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
       <div style={{ flex: 1, overflowY: "auto" }}>
         {view === 'world' ? (
           <div className="world-view-content">
-            <div className="world-icon">🌍</div>
+            <div style={{
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              margin: "0 auto 15px",
+              boxShadow: "0 8px 30px rgba(131, 77, 255, 0.4)",
+              border: "3px solid rgba(255,255,255,0.2)",
+              animation: "pulse 2s ease-in-out infinite"
+            }}>
+              <img
+                src="/world.jpg"
+                alt="World"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover"
+                }}
+              />
+            </div>
             <div style={{ fontWeight: '700', fontSize: '1.2rem', marginBottom: '8px' }}>
               World Community
             </div>
@@ -326,7 +351,13 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                     }}>
-                      {chat.lastMessage ? chat.lastMessage.content : "Start a conversation"}
+                      {chat.lastMessage
+                        ? (chat.lastMessage.type === "image" ||
+                          chat.lastMessage.content?.includes("cloudinary.com") ||
+                          chat.lastMessage.content?.includes("res.cloudinary"))
+                          ? "📷 Photo"
+                          : chat.lastMessage.content
+                        : "Start a conversation"}
                     </div>
                   </div>
                 </div>
@@ -420,14 +451,6 @@ export default function Sidebar({ setSelectedUser, setConversation }) {
         </div>
 
         <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            onClick={toggleTheme}
-            title="Toggle Theme"
-            className="footer-btn"
-          >
-            {theme === "light" ? "🌙" : "☀️"}
-          </button>
-
           <button
             onClick={() => window.location.href = '/settings'}
             title="Settings"

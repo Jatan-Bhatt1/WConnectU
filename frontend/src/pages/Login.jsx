@@ -23,28 +23,44 @@ export default function Login() {
     const handleMouseMove = (e) => {
       if (document.activeElement === passwordInput) return;
 
-      const rect = scene.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
+      // Use window center as reference for better tracking across full screen
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
 
-      const damp = 25;
-      const dx = Math.max(-12, Math.min(12, (e.clientX - centerX) / damp));
-      const dy = Math.max(-12, Math.min(12, (e.clientY - centerY) / damp));
+      // Calculate distance from cursor to window center
+      const deltaX = e.clientX - centerX;
+      const deltaY = e.clientY - centerY;
 
+      // Calculate percentage of distance from center (-1 to 1)
+      const xPercent = deltaX / (window.innerWidth / 2);
+      const yPercent = deltaY / (window.innerHeight / 2);
+
+      // Scale movement based on max allowable distance
+      // Increased to 28 for maximum visibility while staying on face
+      const maxMove = 28;
+      const moveX = xPercent * maxMove;
+      const moveY = yPercent * maxMove;
+
+      // Update transforms for smoother animation
       eyes.forEach((eye) => {
-        eye.style.transform = `translate(${dx}px, ${dy}px)`;
+        eye.style.transform = `translate3d(${moveX}px, ${moveY}px, 0)`;
       });
 
       mouths.forEach((mouth) => {
-        mouth.style.transform = `translate(${dx * 0.5}px, ${dy * 0.5}px)`;
+        mouth.style.transform = `translate3d(${moveX * 0.4}px, ${moveY * 0.4}px, 0)`;
       });
     };
 
     const onFocus = () => scene.classList.add("password-mode");
     const onBlur = () => {
       scene.classList.remove("password-mode");
-      eyes.forEach((e) => (e.style.transform = "translate(0,0)"));
-      mouths.forEach((m) => (m.style.transform = "translate(0,0)"));
+      // Reset eyes and mouths to original positions
+      eyes.forEach((eye) => {
+        eye.style.transform = "translate(0, 0)";
+      });
+      mouths.forEach((mouth) => {
+        mouth.style.transform = "translate(0, 0)";
+      });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -88,7 +104,11 @@ export default function Login() {
           0%, 100% { box-shadow: 0 0 20px rgba(131, 77, 255, 0.3); }
           50% { box-shadow: 0 0 40px rgba(131, 77, 255, 0.5); }
         }
-        .eye { transition: transform 0.1s; }
+        .eye { 
+          will-change: transform;
+          transform-box: fill-box;
+          transform-origin: center;
+        }
         .eye-open { animation: blink 4s infinite; }
         @keyframes blink {
           0%,48%,52%,100% { scale: 1 1; }
@@ -110,23 +130,22 @@ export default function Login() {
           width: 100%;
           padding: 16px 20px;
           border-radius: 16px;
-          border: 2px solid transparent;
-          background: linear-gradient(#fff, #fff) padding-box,
-                      linear-gradient(135deg, #e2e8f0 0%, #edf2f7 100%) border-box;
+          border: 2px solid rgba(255,255,255,0.1);
+          background: rgba(255,255,255,0.05);
+          backdrop-filter: blur(10px);
           font-size: 1rem;
           transition: all 0.3s ease;
           box-sizing: border-box;
-          color: #1a202c;
+          color: white;
         }
         .auth-input:focus {
           outline: none;
-          background: linear-gradient(#fff, #fff) padding-box,
-                      linear-gradient(135deg, #834dff 0%, #6a2cff 100%) border-box;
-          box-shadow: 0 0 0 4px rgba(131, 77, 255, 0.15),
-                      0 4px 20px rgba(131, 77, 255, 0.1);
+          border-color: #834dff;
+          box-shadow: 0 0 0 4px rgba(131, 77, 255, 0.2);
+          background: rgba(255,255,255,0.08);
         }
         .auth-input::placeholder {
-          color: #a0aec0;
+          color: rgba(255,255,255,0.5);
         }
         .auth-btn {
           width: 100%;
@@ -168,13 +187,12 @@ export default function Login() {
           transform: none;
         }
         .form-card {
-          background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+          background: rgba(255,255,255,0.05);
+          backdrop-filter: blur(30px);
           border-radius: 32px;
           padding: 50px 45px;
-          box-shadow: 0 25px 80px rgba(0,0,0,0.12),
-                      0 10px 30px rgba(0,0,0,0.08),
-                      inset 0 1px 0 rgba(255,255,255,0.9);
-          border: 1px solid rgba(255,255,255,0.8);
+          box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+          border: 1px solid rgba(255,255,255,0.1);
           position: relative;
           overflow: hidden;
         }
@@ -200,7 +218,7 @@ export default function Login() {
           gap: 8px;
           font-size: 0.9rem;
           font-weight: 600;
-          color: #4a5568;
+          color: rgba(255,255,255,0.7);
           margin-bottom: 10px;
         }
         .input-icon {
@@ -358,7 +376,7 @@ export default function Login() {
         <div style={{
           width: "550px",
           minWidth: "550px",
-          background: "linear-gradient(180deg, #f0f4f8 0%, #e2e8f0 100%)",
+          background: "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -453,13 +471,13 @@ export default function Login() {
             <h2 style={{
               fontSize: "1.9rem",
               fontWeight: "800",
-              color: "#1a202c",
+              color: "white",
               marginBottom: "8px",
               textAlign: "center",
               letterSpacing: "-0.5px"
             }}>Welcome Back</h2>
             <p style={{
-              color: "#718096",
+              color: "rgba(255,255,255,0.6)",
               marginBottom: "30px",
               fontSize: "0.95rem",
               textAlign: "center"
@@ -505,14 +523,14 @@ export default function Login() {
               </div>
               {error && (
                 <div style={{
-                  color: '#e53e3e',
+                  color: '#fca5a5',
                   marginBottom: "18px",
                   fontWeight: 600,
                   fontSize: "0.9rem",
                   padding: "14px 16px",
-                  background: "linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%)",
+                  background: "rgba(239, 68, 68, 0.15)",
                   borderRadius: "12px",
-                  border: "1px solid #feb2b2",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
                   display: "flex",
                   alignItems: "center",
                   gap: "10px"
@@ -541,7 +559,7 @@ export default function Login() {
             <div style={{
               marginTop: "28px",
               fontSize: "0.95rem",
-              color: "#718096",
+              color: "rgba(255,255,255,0.6)",
               textAlign: "center"
             }}>
               Don't have an account?{" "}

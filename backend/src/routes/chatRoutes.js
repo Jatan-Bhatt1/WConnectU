@@ -6,6 +6,7 @@ import {
   getMessages,
   fetchChats,
   accessGlobalChat,
+  deleteConversation,
 } from "../controllers/chatController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
@@ -31,5 +32,6 @@ router.post("/message/image", (req, res, next) => {
 });
 
 router.get("/message/:id", getMessages);
+router.delete("/conversation/:id", deleteConversation);
 
 export default router;
