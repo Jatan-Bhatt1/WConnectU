@@ -31,6 +31,12 @@ const storage = new CloudinaryStorage({
   params: {
     folder: "wconnectu_uploads",
     allowed_formats: ["jpg", "png", "jpeg", "webp", "gif"],
+    format: "webp", // Convert to webp for smaller file size
+    transformation: [
+      { width: 1000, crop: "limit" }, // Limit max width
+      { quality: "auto:low" }, // Auto quality optimization (favor speed)
+      { fetch_format: "auto" }, // Auto format based on browser
+    ],
   },
 });
 

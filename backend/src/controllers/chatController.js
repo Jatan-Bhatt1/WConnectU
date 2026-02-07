@@ -99,7 +99,7 @@ export const sendMessage = async (req, res, next) => {
 // SEND IMAGE MESSAGE
 export const sendImageMessage = async (req, res, next) => {
   try {
-    const { conversationId } = req.body;
+    const { conversationId, caption } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: "No image file uploaded" });
@@ -112,6 +112,7 @@ export const sendImageMessage = async (req, res, next) => {
       content: imageUrl,
       conversation: conversationId,
       type: "image",
+      caption: caption || "",
     });
 
     await Conversation.findByIdAndUpdate(conversationId, {
@@ -159,6 +160,46 @@ export const getMessages = async (req, res, next) => {
     }
 
     res.json(messages);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE CONVERSATION
+export const deleteConversation = async (req, res, next) => {
+  try {
+    const { id: conversationId } = req.params;
+
+    // Find the conversation
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    // Check if user is a participant (can't delete global chat)
+    if (conversation.isGlobal) {
+      return res.status(403).json({ message: "Cannot delete global chat" });
+    }
+
+    const isParticipant = conversation.participants.some(
+      (p) => p.toString() === req.user._id.toString()
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Not authorized to delete this chat" });
+    }
+
+    // Delete all messages in the conversation
+    await Message.deleteMany({ conversation: conversationId });
+
+    // Update the conversation to remove lastMessage reference
+    // This keeps the chat in the sidebar but shows it as empty
+    await Conversation.findByIdAndUpdate(conversationId, {
+      $unset: { lastMessage: "" }
+    });
+
+    res.json({ message: "Chat messages cleared successfully" });
   } catch (error) {
     next(error);
   }

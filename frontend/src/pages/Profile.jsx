@@ -1,12 +1,11 @@
 import { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
 
 export default function Profile() {
-  const { user, login, logout, updateUser } = useAuth();
-  const { theme } = useTheme();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -26,23 +25,17 @@ export default function Profile() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Show preview immediately
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result);
-    };
+    reader.onloadend = () => setAvatarPreview(reader.result);
     reader.readAsDataURL(file);
 
-    // Upload to server
     setUploadingAvatar(true);
     try {
       const formData = new FormData();
       formData.append("avatar", file);
-
       const { data } = await api.put("/api/users/avatar", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
       updateUser({ avatar: data.avatar });
       setAvatarPreview(data.avatar);
       setProfileMessage({ type: "success", text: "Avatar updated!" });
@@ -58,29 +51,19 @@ export default function Profile() {
     e.preventDefault();
     setLoading(true);
     setProfileMessage({ type: "", text: "" });
-
     try {
       const { data } = await api.put("/api/users/profile", { name });
-
       const storedUser = JSON.parse(localStorage.getItem("user"));
       if (storedUser) {
         storedUser.name = data.name;
         localStorage.setItem("user", JSON.stringify(storedUser));
         window.location.reload();
       }
-
       setProfileMessage({ type: "success", text: "Profile updated successfully!" });
     } catch (err) {
-      let errorMsg = "Failed to update profile";
-      if (err.response && err.response.data && err.response.data.message) {
-        errorMsg = err.response.data.message;
-      } else if (err.message) {
-        errorMsg = err.message;
-      }
-
       setProfileMessage({
         type: "error",
-        text: errorMsg,
+        text: err.response?.data?.message || "Failed to update profile",
       });
     } finally {
       setLoading(false);
@@ -93,10 +76,8 @@ export default function Profile() {
       setPasswordMessage({ type: "error", text: "New passwords do not match" });
       return;
     }
-
     setLoading(true);
     setPasswordMessage({ type: "", text: "" });
-
     try {
       await api.put("/api/users/password", {
         oldPassword: passwordData.oldPassword,
@@ -105,53 +86,13 @@ export default function Profile() {
       setPasswordMessage({ type: "success", text: "Password updated successfully!" });
       setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
-      let errorMsg = "Failed to update password";
-      if (err.response && err.response.data && err.response.data.message) {
-        errorMsg = err.response.data.message;
-      } else if (err.message) {
-        errorMsg = err.message;
-      }
-
       setPasswordMessage({
         type: "error",
-        text: errorMsg,
+        text: err.response?.data?.message || "Failed to update password",
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const containerStyle = {
-    maxWidth: "500px",
-    margin: "50px auto",
-    padding: "30px",
-    background: "var(--sidebar-bg)",
-    borderRadius: "15px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    color: "var(--text-color)",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    padding: "12px",
-    marginTop: "8px",
-    marginBottom: "20px",
-    borderRadius: "8px",
-    border: "1px solid var(--sidebar-border)",
-    background: "var(--input-bg)",
-    color: "var(--text-color)",
-    fontSize: "1rem",
-  };
-
-  const buttonStyle = {
-    padding: "12px 24px",
-    borderRadius: "8px",
-    border: "none",
-    background: "var(--primary-color)",
-    color: "white",
-    fontWeight: "600",
-    fontSize: "1rem",
-    width: "100%",
   };
 
   const getAvatarUrl = () => {
@@ -161,239 +102,344 @@ export default function Profile() {
     return avatarPreview;
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+  };
+
   return (
-    <div style={{ padding: "20px", minHeight: "100vh", background: "var(--bg-color)" }}>
-      <button
-        onClick={() => navigate("/")}
-        className="back-button"
-        style={{
-          position: 'absolute',
-          top: '20px',
-          left: '20px',
-          background: 'var(--header-bg)',
-          border: '1px solid var(--sidebar-border)',
-          color: 'var(--text-color)',
-          fontSize: '0.95rem',
-          padding: '10px 20px',
-          borderRadius: '30px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-          transition: 'all 0.3s ease',
-          backdropFilter: 'blur(10px)',
-          zIndex: 10,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)';
-          e.currentTarget.style.borderColor = 'var(--primary-color)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
-          e.currentTarget.style.borderColor = 'var(--sidebar-border)';
-        }}
-      >
-        <span style={{ fontSize: '1.2rem', marginBottom: '2px' }}>←</span>
-        Back to Chat
-      </button>
+    <>
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .profile-input {
+          width: 100%;
+          padding: 14px 18px;
+          border-radius: 14px;
+          border: 2px solid rgba(255,255,255,0.1);
+          background: rgba(255,255,255,0.05);
+          backdrop-filter: blur(10px);
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          color: white;
+        }
+        .profile-input:focus {
+          outline: none;
+          border-color: #834dff;
+          box-shadow: 0 0 0 4px rgba(131, 77, 255, 0.2);
+          background: rgba(255,255,255,0.08);
+        }
+        .profile-input::placeholder { color: rgba(255,255,255,0.5); }
+        .profile-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .profile-btn {
+          width: 100%;
+          padding: 16px;
+          border-radius: 14px;
+          border: none;
+          font-weight: 700;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+        .profile-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        .profile-btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          transition: left 0.5s ease;
+        }
+        .profile-btn:hover::before { left: 100%; }
+        .profile-btn:hover { transform: translateY(-2px); }
+      `}</style>
 
-      <div style={containerStyle}>
-        <h2 style={{ textAlign: "center", marginBottom: "30px" }}>Edit Profile</h2>
+      <div style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%)",
+        position: "relative",
+        overflow: "hidden",
+        padding: "40px 20px"
+      }}>
+        {/* Floating gradient orbs */}
+        <div style={{
+          position: "absolute", top: "10%", left: "10%", width: "400px", height: "400px",
+          borderRadius: "50%", background: "radial-gradient(circle, rgba(131,77,255,0.25) 0%, transparent 70%)",
+          filter: "blur(80px)", animation: "float 8s ease-in-out infinite", pointerEvents: "none"
+        }} />
+        <div style={{
+          position: "absolute", bottom: "10%", right: "10%", width: "350px", height: "350px",
+          borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,132,0.2) 0%, transparent 70%)",
+          filter: "blur(60px)", animation: "float 10s ease-in-out infinite reverse", pointerEvents: "none"
+        }} />
+        <div style={{
+          position: "absolute", top: "50%", right: "30%", width: "250px", height: "250px",
+          borderRadius: "50%", background: "radial-gradient(circle, rgba(255,159,67,0.15) 0%, transparent 70%)",
+          filter: "blur(50px)", animation: "float 6s ease-in-out infinite", pointerEvents: "none"
+        }} />
 
-        {/* Avatar Section */}
-        <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <div
-            onClick={() => fileInputRef.current?.click()}
+        {/* Back button */}
+        <motion.button
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          onClick={() => navigate("/")}
+          whileHover={{ scale: 1.05, x: -5 }}
+          whileTap={{ scale: 0.95 }}
+          style={{
+            position: "fixed", top: "30px", left: "30px", zIndex: 100,
+            background: "rgba(255,255,255,0.1)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.15)", borderRadius: "50px",
+            padding: "12px 24px", color: "white", fontWeight: "600",
+            display: "flex", alignItems: "center", gap: "10px", cursor: "pointer"
+          }}
+        >
+          <span style={{ fontSize: "1.2rem" }}>←</span> Back to Chat
+        </motion.button>
+
+        {/* Main content */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          style={{
+            maxWidth: "500px", margin: "60px auto 0", position: "relative", zIndex: 10
+          }}
+        >
+          {/* Profile Card */}
+          <motion.div
+            variants={itemVariants}
             style={{
-              width: "120px",
-              height: "120px",
-              borderRadius: "50%",
-              margin: "0 auto 15px",
-              background: getAvatarUrl() ? `url(${getAvatarUrl()}) center/cover` : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              border: "4px solid var(--primary-color)",
-              position: "relative",
-              overflow: "hidden",
+              background: "rgba(255,255,255,0.05)", backdropFilter: "blur(30px)",
+              borderRadius: "28px", padding: "40px",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 25px 80px rgba(0,0,0,0.4)",
+              position: "relative", overflow: "hidden"
             }}
           >
-            {!getAvatarUrl() && (
-              <span style={{ color: "white", fontSize: "48px", fontWeight: "bold" }}>
-                {user?.name?.charAt(0).toUpperCase()}
-              </span>
-            )}
-            <div
+            {/* Gradient top border */}
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0, height: "4px",
+              background: "linear-gradient(90deg, #834dff, #00a884, #ff9f43, #834dff)",
+              backgroundSize: "200% 100%", animation: "gradient-shift 3s ease infinite"
+            }} />
+
+            <motion.h2
+              variants={itemVariants}
               style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                background: "rgba(0,0,0,0.6)",
-                color: "white",
-                padding: "5px",
-                fontSize: "12px",
+                textAlign: "center", fontSize: "2rem", fontWeight: "800",
+                color: "white", marginBottom: "30px",
+                background: "linear-gradient(135deg, #ffffff 0%, #a0aec0 100%)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
               }}
             >
-              {uploadingAvatar ? "Uploading..." : "📷 Change"}
-            </div>
-          </div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleAvatarChange}
-            accept="image/*"
-            style={{ display: "none" }}
-          />
-          <p style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
-            Click avatar to change photo
-          </p>
-        </div>
+              Edit Profile
+            </motion.h2>
 
-        {/* Update Profile Form */}
-        <form onSubmit={handleUpdateProfile} style={{ marginBottom: "40px" }}>
-          <h3 style={{ marginBottom: "15px", borderBottom: '1px solid var(--sidebar-border)', paddingBottom: '10px' }}>Personal Info</h3>
+            {/* Avatar Section */}
+            <motion.div
+              variants={itemVariants}
+              style={{ textAlign: "center", marginBottom: "35px" }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  width: "130px", height: "130px", borderRadius: "50%",
+                  margin: "0 auto 15px", cursor: "pointer",
+                  background: getAvatarUrl()
+                    ? `url(${getAvatarUrl()}) center/cover`
+                    : "linear-gradient(135deg, #834dff 0%, #6a2cff 100%)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "4px solid rgba(131,77,255,0.5)", position: "relative",
+                  boxShadow: "0 10px 40px rgba(131,77,255,0.3)"
+                }}
+              >
+                {!getAvatarUrl() && (
+                  <span style={{ color: "white", fontSize: "52px", fontWeight: "bold" }}>
+                    {user?.name?.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <div style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0,
+                  background: "linear-gradient(transparent, rgba(0,0,0,0.8))",
+                  color: "white", padding: "8px", fontSize: "12px", fontWeight: "600",
+                  borderRadius: "0 0 50% 50%"
+                }}>
+                  {uploadingAvatar ? "⏳" : "📷 Change"}
+                </div>
+              </motion.div>
+              <input type="file" ref={fileInputRef} onChange={handleAvatarChange}
+                accept="image/*" style={{ display: "none" }} />
+              <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.6)" }}>
+                Click avatar to change photo
+              </p>
+            </motion.div>
 
-          {profileMessage.text && (
-            <div style={{
-              padding: '12px',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              background: profileMessage.type === 'error' ? '#fee2e2' : '#dcfce7',
-              color: profileMessage.type === 'error' ? '#ef4444' : '#16a34a',
-              textAlign: 'center',
-              fontWeight: 'bold',
-              border: `1px solid ${profileMessage.type === 'error' ? '#ef4444' : '#16a34a'}`,
-            }}>
-              {profileMessage.text}
-            </div>
-          )}
+            {/* Profile Form */}
+            <motion.form variants={itemVariants} onSubmit={handleUpdateProfile} style={{ marginBottom: "35px" }}>
+              <h3 style={{
+                marginBottom: "20px", paddingBottom: "12px",
+                borderBottom: "1px solid rgba(255,255,255,0.1)",
+                color: "#834dff", fontSize: "1.1rem", fontWeight: "700"
+              }}>👤 Personal Info</h3>
 
-          <div>
-            <label>Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={inputStyle}
-              required
-            />
-          </div>
-          <div>
-            <label>Email</label>
-            <input
-              type="email"
-              value={user?.email}
-              disabled
-              style={{ ...inputStyle, opacity: 0.7, cursor: 'not-allowed' }}
-            />
-          </div>
-          <button type="submit" style={buttonStyle} disabled={loading}>
-            {loading ? "Updating..." : "Update Profile"}
-          </button>
-        </form>
+              {profileMessage.text && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    padding: "14px", borderRadius: "12px", marginBottom: "20px",
+                    background: profileMessage.type === "error"
+                      ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)",
+                    border: `1px solid ${profileMessage.type === "error" ? "#ef4444" : "#10b981"}`,
+                    color: profileMessage.type === "error" ? "#fca5a5" : "#6ee7b7",
+                    textAlign: "center", fontWeight: "600"
+                  }}
+                >
+                  {profileMessage.text}
+                </motion.div>
+              )}
 
-        {/* Update Password Form */}
-        <form onSubmit={handleUpdatePassword}>
-          <h3 style={{ marginBottom: "15px", borderBottom: '1px solid var(--sidebar-border)', paddingBottom: '10px' }}>Change Password</h3>
-          <div>
-            <label>Current Password</label>
-            <input
-              type="password"
-              placeholder="Enter current password"
-              value={passwordData.oldPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-              style={inputStyle}
-              required
-            />
-          </div>
-          <div>
-            <label>New Password</label>
-            <input
-              type="password"
-              placeholder="Enter new password"
-              value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              style={inputStyle}
-              required
-            />
-          </div>
-          <div>
-            <label>Confirm New Password</label>
-            <input
-              type="password"
-              placeholder="Confirm new password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              style={inputStyle}
-              required
-            />
-          </div>
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", fontWeight: "600", marginBottom: "8px", display: "block" }}>Name</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                  className="profile-input" required />
+              </div>
+              <div style={{ marginBottom: "22px" }}>
+                <label style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", fontWeight: "600", marginBottom: "8px", display: "block" }}>Email</label>
+                <input type="email" value={user?.email} disabled className="profile-input" />
+              </div>
+              <button type="submit" disabled={loading} className="profile-btn" style={{
+                background: "linear-gradient(135deg, #834dff 0%, #6a2cff 100%)",
+                color: "white", boxShadow: "0 8px 25px rgba(131,77,255,0.4)"
+              }}>
+                {loading ? "Updating..." : "✨ Update Profile"}
+              </button>
+            </motion.form>
 
-          {passwordMessage.text && (
-            <div style={{
-              padding: '12px',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              background: passwordMessage.type === 'error' ? '#fee2e2' : '#dcfce7',
-              color: passwordMessage.type === 'error' ? '#ef4444' : '#16a34a',
-              textAlign: 'center',
-              fontWeight: 'bold',
-              border: `1px solid ${passwordMessage.type === 'error' ? '#ef4444' : '#16a34a'}`,
-            }}>
-              {passwordMessage.text}
-            </div>
-          )}
+            {/* Password Form */}
+            <motion.form variants={itemVariants} onSubmit={handleUpdatePassword}>
+              <h3 style={{
+                marginBottom: "20px", paddingBottom: "12px",
+                borderBottom: "1px solid rgba(255,255,255,0.1)",
+                color: "#00a884", fontSize: "1.1rem", fontWeight: "700"
+              }}>🔐 Change Password</h3>
 
-          <button type="submit" style={{ ...buttonStyle, background: '#333' }} disabled={loading}>
-            {loading ? "Updating..." : "Update Password"}
-          </button>
-        </form>
+              {passwordMessage.text && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    padding: "14px", borderRadius: "12px", marginBottom: "20px",
+                    background: passwordMessage.type === "error"
+                      ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)",
+                    border: `1px solid ${passwordMessage.type === "error" ? "#ef4444" : "#10b981"}`,
+                    color: passwordMessage.type === "error" ? "#fca5a5" : "#6ee7b7",
+                    textAlign: "center", fontWeight: "600"
+                  }}
+                >
+                  {passwordMessage.text}
+                </motion.div>
+              )}
 
-        <button
-          onClick={logout}
-          style={{
-            ...buttonStyle,
-            marginTop: '30px',
-            background: '#dc2626', // Red color for danger action
-            opacity: 0.9
-          }}
-        >
-          Logout
-        </button>
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", fontWeight: "600", marginBottom: "8px", display: "block" }}>Current Password</label>
+                <input type="password" placeholder="Enter current password"
+                  value={passwordData.oldPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                  className="profile-input" required />
+              </div>
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", fontWeight: "600", marginBottom: "8px", display: "block" }}>New Password</label>
+                <input type="password" placeholder="Enter new password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  className="profile-input" required />
+              </div>
+              <div style={{ marginBottom: "22px" }}>
+                <label style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", fontWeight: "600", marginBottom: "8px", display: "block" }}>Confirm New Password</label>
+                <input type="password" placeholder="Confirm new password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  className="profile-input" required />
+              </div>
+              <button type="submit" disabled={loading} className="profile-btn" style={{
+                background: "linear-gradient(135deg, #00a884 0%, #00d4aa 100%)",
+                color: "white", boxShadow: "0 8px 25px rgba(0,168,132,0.4)"
+              }}>
+                {loading ? "Updating..." : "🔒 Update Password"}
+              </button>
+            </motion.form>
 
-        <button
-          onClick={async () => {
-            const confirmed = window.confirm(
-              "Are you sure you want to delete your account? This action cannot be undone!"
-            );
-            if (!confirmed) return;
+            {/* Action Buttons */}
+            <motion.div variants={itemVariants} style={{ marginTop: "35px" }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={logout}
+                className="profile-btn"
+                style={{
+                  background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+                  color: "white", marginBottom: "12px",
+                  boxShadow: "0 8px 25px rgba(220,38,38,0.3)"
+                }}
+              >
+                🚪 Logout
+              </motion.button>
 
-            try {
-              await api.delete("/api/users/me");
-              logout();
-              navigate("/login");
-            } catch (err) {
-              alert("Failed to delete account. Please try again.");
-              console.error(err);
-            }
-          }}
-          style={{
-            ...buttonStyle,
-            marginTop: '15px',
-            background: 'transparent',
-            border: '2px solid #dc2626',
-            color: '#dc2626',
-          }}
-        >
-          🗑️ Delete Account
-        </button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={async () => {
+                  if (!window.confirm("Are you sure you want to delete your account? This cannot be undone!")) return;
+                  try {
+                    await api.delete("/api/users/me");
+                    logout();
+                    navigate("/login");
+                  } catch (err) {
+                    alert("Failed to delete account");
+                  }
+                }}
+                className="profile-btn"
+                style={{
+                  background: "transparent",
+                  border: "2px solid rgba(220,38,38,0.5)",
+                  color: "#fca5a5"
+                }}
+              >
+                🗑️ Delete Account
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </div>
-    </div>
+    </>
   );
 }

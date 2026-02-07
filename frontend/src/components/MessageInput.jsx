@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import api from "../api/axios";
 import socket from "../sockets/socket";
+import { useAuth } from "../context/AuthContext";
 
 // Emoji categories with popular emojis
 const emojiCategories = {
@@ -42,11 +43,15 @@ const emojiCategories = {
   ]
 };
 
+// Counter for temporary IDs
+let tempIdCounter = 0;
+
 export default function MessageInput({
   conversationId,
   receiverId,
   setMessages,
 }) {
+  const { user } = useAuth();
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -86,8 +91,8 @@ export default function MessageInput({
     setShowEmojiPicker((prev) => !prev);
   };
 
-  // Compress image using Canvas API
-  const compressImage = (file, maxWidth = 1200, quality = 0.7) => {
+  // Compress image using Canvas API - aggressive compression for fast uploads
+  const compressImage = (file, maxWidth = 800, quality = 0.5) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -159,54 +164,85 @@ export default function MessageInput({
   const sendImageWithCaption = async () => {
     if (!selectedFile || isSending) return;
 
-    setIsSending(true);
+    const tempId = `temp-img-${++tempIdCounter}-${Date.now()}`;
+    const caption = imageCaption.trim();
+    const localPreviewUrl = imagePreview;
+
+    // Create optimistic message with local preview
+    const optimisticMessage = {
+      _id: tempId,
+      content: localPreviewUrl, // Use local preview URL for instant display
+      sender: { _id: user._id, name: user.name, email: user.email },
+      conversation: conversationId,
+      type: "image",
+      caption: caption,
+      status: "sending",
+      createdAt: new Date().toISOString(),
+    };
+
+    // Show message and close modal immediately
+    setMessages((prev) => [...prev, optimisticMessage]);
+    cancelImagePreview();
+
     try {
       const formData = new FormData();
       formData.append("image", selectedFile);
       formData.append("conversationId", conversationId);
-      if (imageCaption.trim()) {
-        formData.append("caption", imageCaption.trim());
+      if (caption) {
+        formData.append("caption", caption);
       }
 
       const { data } = await api.post("/api/chat/message/image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      // Replace optimistic message with real one
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === tempId ? data : msg))
+      );
+
       socket.emit("sendMessage", {
         receiverId,
         message: data,
       });
-
-      setMessages((prev) => [...prev, data]);
-      cancelImagePreview();
     } catch (err) {
       console.error("Failed to send image:", err);
-      alert("Failed to send image");
-    } finally {
-      setIsSending(false);
+      // Mark message as failed
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === tempId ? { ...msg, status: "failed" } : msg
+        )
+      );
     }
   };
 
   const sendMessage = async () => {
     if (!text.trim() || isSending) return;
 
-    setIsSending(true);
+    const messageText = text.trim();
+
+    // Clear input immediately for better UX
+    setText("");
     setShowEmojiPicker(false);
+    setIsSending(true);
+
     try {
       const { data } = await api.post("/api/chat/message", {
         conversationId,
-        content: text,
+        content: messageText,
       });
+
+      // Add message only after server confirms
+      setMessages((prev) => [...prev, data]);
 
       socket.emit("sendMessage", {
         receiverId,
         message: data,
       });
-
-      setMessages((prev) => [...prev, data]);
-      setText("");
     } catch (err) {
       console.error("Failed to send message:", err);
+      // Restore text on failure so user can retry
+      setText(messageText);
     } finally {
       setIsSending(false);
     }
@@ -215,12 +251,13 @@ export default function MessageInput({
   return (
     <div
       style={{
-        padding: "14px 20px",
+        padding: "16px 20px",
         display: "flex",
         alignItems: "center",
         gap: "12px",
-        background: "var(--header-bg)",
-        borderTop: "1px solid var(--sidebar-border)",
+        background: "rgba(255,255,255,0.05)",
+        backdropFilter: "blur(20px)",
+        borderTop: "1px solid rgba(255,255,255,0.1)",
         position: "relative",
       }}
     >
@@ -254,13 +291,16 @@ export default function MessageInput({
         >
           <div
             style={{
-              background: "var(--sidebar-bg)",
-              borderRadius: "16px",
-              padding: "20px",
+              background: "rgba(20, 20, 35, 0.95)",
+              backdropFilter: "blur(30px)",
+              borderRadius: "20px",
+              padding: "24px",
               maxWidth: "500px",
               width: "90%",
               maxHeight: "80vh",
               overflow: "auto",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 25px 80px rgba(0,0,0,0.5)"
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -343,18 +383,19 @@ export default function MessageInput({
           ref={emojiPickerRef}
           style={{
             position: "absolute",
-            bottom: "70px",
+            bottom: "75px",
             left: "20px",
-            width: "340px",
-            height: "380px",
-            background: "var(--sidebar-bg)",
-            borderRadius: "16px",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.3)",
-            border: "1px solid var(--sidebar-border)",
+            width: "360px",
+            height: "400px",
+            background: "rgba(20, 20, 35, 0.95)",
+            backdropFilter: "blur(30px)",
+            borderRadius: "20px",
+            boxShadow: "0 15px 50px rgba(0, 0, 0, 0.5)",
+            border: "1px solid rgba(255,255,255,0.15)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            animation: "slideUp 0.2s ease-out",
+            animation: "slideUp 0.3s ease-out",
             zIndex: 1000,
           }}
         >
@@ -496,21 +537,25 @@ export default function MessageInput({
           placeholder="Type a message..."
           style={{
             width: "100%",
-            padding: "12px 20px",
+            padding: "14px 22px",
             borderRadius: "25px",
-            border: "none",
+            border: "2px solid rgba(255,255,255,0.1)",
             outline: "none",
-            background: "var(--input-bg)",
-            color: "var(--text-color)",
+            background: "rgba(255,255,255,0.05)",
+            backdropFilter: "blur(10px)",
+            color: "white",
             fontSize: "15px",
-            boxShadow: "inset 0 1px 3px rgba(0,0,0,0.1)",
-            transition: "box-shadow 0.3s ease"
+            transition: "all 0.3s ease"
           }}
           onFocus={(e) => {
-            e.currentTarget.style.boxShadow = "inset 0 1px 3px rgba(0,0,0,0.1), 0 0 0 2px var(--primary-color)";
+            e.currentTarget.style.borderColor = "rgba(131, 77, 255, 0.5)";
+            e.currentTarget.style.boxShadow = "0 0 0 4px rgba(131, 77, 255, 0.15)";
+            e.currentTarget.style.background = "rgba(255,255,255,0.08)";
           }}
           onBlur={(e) => {
-            e.currentTarget.style.boxShadow = "inset 0 1px 3px rgba(0,0,0,0.1)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+            e.currentTarget.style.boxShadow = "none";
+            e.currentTarget.style.background = "rgba(255,255,255,0.05)";
           }}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
@@ -558,28 +603,28 @@ export default function MessageInput({
         disabled={isSending || !text.trim()}
         style={{
           background: text.trim()
-            ? "linear-gradient(135deg, var(--primary-color) 0%, #00d4aa 100%)"
-            : "var(--hover-bg)",
+            ? "linear-gradient(135deg, #834dff 0%, #a855f7 100%)"
+            : "rgba(255,255,255,0.1)",
           border: "none",
           borderRadius: "50%",
-          width: "44px",
-          height: "44px",
+          width: "48px",
+          height: "48px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: text.trim() ? "pointer" : "default",
           transition: "all 0.3s ease",
-          boxShadow: text.trim() ? "0 4px 15px rgba(0, 168, 132, 0.4)" : "none"
+          boxShadow: text.trim() ? "0 4px 20px rgba(131, 77, 255, 0.4)" : "none"
         }}
         onMouseEnter={(e) => {
           if (text.trim()) {
             e.currentTarget.style.transform = "scale(1.1)";
-            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0, 168, 132, 0.5)";
+            e.currentTarget.style.boxShadow = "0 6px 30px rgba(131, 77, 255, 0.6)";
           }
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = "scale(1)";
-          e.currentTarget.style.boxShadow = text.trim() ? "0 4px 15px rgba(0, 168, 132, 0.4)" : "none";
+          e.currentTarget.style.boxShadow = text.trim() ? "0 4px 20px rgba(131, 77, 255, 0.4)" : "none";
         }}
       >
         <svg
