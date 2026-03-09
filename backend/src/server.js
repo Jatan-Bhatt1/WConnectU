@@ -22,9 +22,23 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL || "https://wconnectu.vercel.app",
-];
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
+  : ["https://w-connect-u-123.vercel.app"];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
 
 const io = new Server(server, {
   cors: {
@@ -36,7 +50,8 @@ const io = new Server(server, {
 /* =======================
    Middleware
 ======================= */
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handle preflight for all routes
 app.use(express.json());
 
 // Serve uploaded files statically
