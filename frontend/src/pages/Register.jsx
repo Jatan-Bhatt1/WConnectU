@@ -75,7 +75,7 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      await api.post("https://wconnectu.onrender.com/api/auth/register  ", { name, email, password });
+      await api.post("/api/auth/register", { name, email, password });
       setLoading(false);
       navigate("/login");
     } catch (err) {
