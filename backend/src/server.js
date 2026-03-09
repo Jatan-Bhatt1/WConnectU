@@ -22,16 +22,21 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "https://wconnectu.vercel.app",
+];
+
 const io = new Server(server, {
   cors: {
-    origin: "*", // later restrict to frontend URL
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
   },
 });
 
 /* =======================
    Middleware
 ======================= */
-app.use(cors());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 // Serve uploaded files statically
