@@ -439,7 +439,7 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
               fontSize: "0.9rem",
               marginRight: "0",
               background: user?.avatar
-                ? `url(http://localhost:5000${user.avatar}) center/cover`
+                ? `url(https://wconnectu.onrender.com/${user.avatar}) center/cover`
                 : getAvatarGradient(user?.name)
             }}
           >

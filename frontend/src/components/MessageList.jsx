@@ -211,7 +211,7 @@ export default function MessageList({ messages, isGlobal }) {
                   <div style={{ position: "relative" }}>
                     <motion.img
                       whileHover={{ scale: 1.02 }}
-                      src={msg.content.startsWith("/uploads") ? `http://localhost:5000${msg.content}` : msg.content}
+                      src={msg.content.startsWith("/uploads") ? `https://wconnectu.onrender.com/${msg.content}` : msg.content}
                       alt="Sent image"
                       className="message-image"
                       style={{
@@ -222,7 +222,7 @@ export default function MessageList({ messages, isGlobal }) {
                         cursor: "pointer",
                         boxShadow: "0 4px 20px rgba(0,0,0,0.3)"
                       }}
-                      onClick={() => window.open(msg.content.startsWith("/uploads") ? `http://localhost:5000${msg.content}` : msg.content, "_blank")}
+                      onClick={() => window.open(msg.content.startsWith("/uploads") ? `https://wconnectu.onrender.com/${msg.content}` : msg.content, "_blank")}
                     />
                     {msg.caption && (
                       <div style={{

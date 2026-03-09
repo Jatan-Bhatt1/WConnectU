@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5173'; // Update if your backend runs elsewhere
+const SOCKET_URL = 'https://wconnectu.onrender.com/'; // Update if your backend runs elsewhere
 
 export default function useSocket() {
 	const socketRef = useRef(null);

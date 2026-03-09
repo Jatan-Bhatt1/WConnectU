@@ -29,7 +29,7 @@ const TopRightControls = () => {
 
   const getAvatarUrl = (avatar) => {
     if (!avatar) return null;
-    if (avatar.startsWith("/uploads")) return `http://localhost:5000${avatar}`;
+    if (avatar.startsWith("/uploads")) return `https://wconnectu.onrender.com/${avatar}`;
     return avatar;
   };
 

@@ -98,7 +98,7 @@ export default function Profile() {
   const getAvatarUrl = () => {
     if (!avatarPreview) return null;
     if (avatarPreview.startsWith("data:")) return avatarPreview;
-    if (avatarPreview.startsWith("/uploads")) return `http://localhost:5000${avatarPreview}`;
+    if (avatarPreview.startsWith("/uploads")) return `https://wconnectu.onrender.com/${avatarPreview}`;
     return avatarPreview;
   };
 
