@@ -75,7 +75,7 @@ const TopRightControls = () => {
   );
 };
 
-export default function ChatWindow({ selectedUser, conversation, onDeleteChat }) {
+export default function ChatWindow({ selectedUser, conversation, onDeleteChat, isMobile, onBack }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
@@ -326,6 +326,27 @@ export default function ChatWindow({ selectedUser, conversation, onDeleteChat })
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {/* Mobile back button */}
+          {isMobile && (
+            <button
+              onClick={onBack}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-color)',
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.3rem',
+                transition: 'background 0.2s'
+              }}
+            >
+              ←
+            </button>
+          )}
           {/* Avatar */}
           <div style={{
             width: '42px',

@@ -177,15 +177,31 @@ export default function Profile() {
         }
         .profile-btn:hover::before { left: 100%; }
         .profile-btn:hover { transform: translateY(-2px); }
+
+        /* Profile Responsive */
+        .profile-page {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+          position: relative;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 40px 20px;
+        }
+
+        @media (max-width: 768px) {
+          .profile-page {
+            padding: 20px 16px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .profile-page {
+            padding: 16px 12px;
+          }
+        }
       `}</style>
 
-      <div style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%)",
-        position: "relative",
-        overflow: "hidden",
-        padding: "40px 20px"
-      }}>
+      <div className="profile-page">
         {/* Floating gradient orbs */}
         <div style={{
           position: "absolute", top: "10%", left: "10%", width: "400px", height: "400px",

@@ -108,15 +108,31 @@ export default function Settings() {
           background: #1a1a2e;
           color: white;
         }
+
+        /* Settings Responsive */
+        .settings-page {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+          position: relative;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 40px 20px;
+        }
+
+        @media (max-width: 768px) {
+          .settings-page {
+            padding: 20px 16px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .settings-page {
+            padding: 16px 12px;
+          }
+        }
       `}</style>
 
-      <div style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%)",
-        position: "relative",
-        overflow: "hidden",
-        padding: "40px 20px"
-      }}>
+      <div className="settings-page">
         {/* Floating gradient orbs */}
         <div style={{
           position: "absolute", top: "5%", right: "15%", width: "400px", height: "400px",

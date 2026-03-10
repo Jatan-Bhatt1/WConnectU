@@ -226,26 +226,107 @@ export default function Login() {
           height: 18px;
           opacity: 0.7;
         }
+
+        /* Login Responsive */
+        .login-container {
+          height: 100vh;
+          width: 100vw;
+          display: flex;
+          background: #0f0f1a;
+          overflow: hidden;
+        }
+        .login-left {
+          flex: 1;
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1a 100%);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          position: relative;
+          overflow: hidden;
+          padding: 40px;
+        }
+        .login-right {
+          width: 550px;
+          min-width: 550px;
+          background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 40px;
+          position: relative;
+          overflow-y: auto;
+        }
+
+        @media (max-width: 1024px) {
+          .login-right {
+            width: 450px;
+            min-width: 450px;
+            padding: 30px;
+          }
+          .form-card {
+            padding: 40px 35px;
+          }
+          .login-left h1 { font-size: 2.5rem !important; }
+        }
+
+        @media (max-width: 768px) {
+          .login-container {
+            flex-direction: column;
+          }
+          .login-left {
+            display: none;
+          }
+          .login-right {
+            width: 100%;
+            min-width: unset;
+            flex: 1;
+            padding: 20px;
+            justify-content: center;
+          }
+          .form-card {
+            padding: 35px 28px;
+            border-radius: 24px;
+            max-width: 420px;
+          }
+          .auth-input {
+            padding: 14px 16px;
+            border-radius: 14px;
+          }
+          .auth-btn {
+            padding: 16px;
+            border-radius: 14px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .login-right {
+            padding: 16px;
+          }
+          .form-card {
+            padding: 28px 22px;
+            border-radius: 20px;
+          }
+          .auth-input {
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+          }
+          .auth-btn {
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+          }
+          .input-label {
+            font-size: 0.8rem;
+          }
+        }
       `}</style>
 
-      <div style={{
-        minHeight: "100vh",
-        width: "100vw",
-        display: "flex",
-        background: "#0f0f1a"
-      }}>
+      <div className="login-container">
         {/* Left Panel - Decorative */}
-        <div style={{
-          flex: 1,
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1a 100%)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "relative",
-          overflow: "hidden",
-          padding: "40px"
-        }}>
+        <div className="login-left">
           {/* Floating gradient orbs */}
           <div style={{
             position: "absolute",
@@ -373,17 +454,7 @@ export default function Login() {
         </div>
 
         {/* Right Panel - Form */}
-        <div style={{
-          width: "550px",
-          minWidth: "550px",
-          background: "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: "40px",
-          position: "relative"
-        }}>
+        <div className="login-right">
           {/* Decorative circles */}
           <div style={{
             position: "absolute",

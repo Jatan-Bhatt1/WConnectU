@@ -3,7 +3,7 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
-export default function Sidebar({ setSelectedUser, setConversation, refreshTrigger }) {
+export default function Sidebar({ setSelectedUser, setConversation, refreshTrigger, isMobile }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [chats, setChats] = useState([]);
@@ -102,12 +102,12 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
   return (
     <div
       style={{
-        width: "320px",
-        minWidth: "320px",
+        width: isMobile ? "100%" : "320px",
+        minWidth: isMobile ? "unset" : "320px",
         flexShrink: 0,
         background: "rgba(255,255,255,0.03)",
         backdropFilter: "blur(20px)",
-        borderRight: "1px solid rgba(255,255,255,0.1)",
+        borderRight: isMobile ? "none" : "1px solid rgba(255,255,255,0.1)",
         height: "100vh",
         display: "flex",
         flexDirection: "column",

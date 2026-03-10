@@ -226,26 +226,107 @@ export default function Register() {
           height: 16px;
           opacity: 0.7;
         }
+
+        /* Register Responsive */
+        .register-container {
+          height: 100vh;
+          width: 100vw;
+          display: flex;
+          background: #0a1628;
+          overflow: hidden;
+        }
+        .register-left {
+          flex: 1;
+          background: linear-gradient(145deg, #0a1628 0%, #0d2137 50%, #0a1628 100%);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          position: relative;
+          overflow: hidden;
+          padding: 40px;
+        }
+        .register-right {
+          width: 550px;
+          min-width: 550px;
+          background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 40px;
+          position: relative;
+          overflow-y: auto;
+        }
+
+        @media (max-width: 1024px) {
+          .register-right {
+            width: 450px;
+            min-width: 450px;
+            padding: 30px;
+          }
+          .form-card {
+            padding: 35px 30px;
+          }
+          .register-left h1 { font-size: 2.5rem !important; }
+        }
+
+        @media (max-width: 768px) {
+          .register-container {
+            flex-direction: column;
+          }
+          .register-left {
+            display: none;
+          }
+          .register-right {
+            width: 100%;
+            min-width: unset;
+            flex: 1;
+            padding: 20px;
+            justify-content: center;
+          }
+          .form-card {
+            padding: 30px 24px;
+            border-radius: 22px;
+            max-width: 420px;
+          }
+          .auth-input {
+            padding: 12px 14px;
+            border-radius: 12px;
+          }
+          .auth-btn {
+            padding: 14px;
+            border-radius: 12px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .register-right {
+            padding: 16px;
+          }
+          .form-card {
+            padding: 24px 20px;
+            border-radius: 18px;
+          }
+          .auth-input {
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+          }
+          .auth-btn {
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+          }
+          .input-label {
+            font-size: 0.78rem;
+          }
+        }
       `}</style>
 
-      <div style={{
-        minHeight: "100vh",
-        width: "100vw",
-        display: "flex",
-        background: "#0a1628"
-      }}>
+      <div className="register-container">
         {/* Left Panel - Decorative */}
-        <div style={{
-          flex: 1,
-          background: "linear-gradient(145deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "relative",
-          overflow: "hidden",
-          padding: "40px"
-        }}>
+        <div className="register-left">
           {/* Animated gradient orbs */}
           <div style={{
             position: "absolute",
@@ -402,17 +483,7 @@ export default function Register() {
         </div>
 
         {/* Right Panel - Form */}
-        <div style={{
-          width: "550px",
-          minWidth: "550px",
-          background: "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: "40px",
-          position: "relative"
-        }}>
+        <div className="register-right">
           {/* Decorative circles */}
           <div style={{
             position: "absolute",

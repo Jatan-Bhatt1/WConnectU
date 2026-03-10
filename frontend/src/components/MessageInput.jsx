@@ -386,6 +386,7 @@ export default function MessageInput({
             bottom: "75px",
             left: "20px",
             width: "360px",
+            maxWidth: "calc(100vw - 40px)",
             height: "400px",
             background: "rgba(20, 20, 35, 0.95)",
             backdropFilter: "blur(30px)",
