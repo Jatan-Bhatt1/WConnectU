@@ -141,7 +141,9 @@ export default function MessageList({ messages, isGlobal }) {
                     width: "36px",
                     height: "36px",
                     borderRadius: "50%",
-                    background: getSenderColor(msg.sender.name),
+                    background: msg.sender.avatar && !msg.sender.avatar.includes("default")
+                      ? `url(${msg.sender.avatar.startsWith('/uploads') ? `https://wconnectu.onrender.com${msg.sender.avatar}` : msg.sender.avatar}) center/cover`
+                      : getSenderColor(msg.sender.name),
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -155,7 +157,7 @@ export default function MessageList({ messages, isGlobal }) {
                     cursor: "pointer"
                   }}
                 >
-                  {msg.sender.name?.charAt(0).toUpperCase()}
+                  {(!msg.sender.avatar || msg.sender.avatar.includes("default")) && msg.sender.name?.charAt(0).toUpperCase()}
                 </motion.div>
               )}
 

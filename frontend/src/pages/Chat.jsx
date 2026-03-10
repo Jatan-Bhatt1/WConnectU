@@ -14,6 +14,22 @@ export default function Chat() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    import("../sockets/socket").then((module) => {
+      const socket = module.default;
+      const handleUserUpdated = (updatedUser) => {
+        if (selectedUser && selectedUser._id === updatedUser.userId) {
+          setSelectedUser(prev => ({ ...prev, avatar: updatedUser.avatar, name: updatedUser.name }));
+        }
+      };
+      socket.on("userUpdated", handleUserUpdated);
+
+      return () => {
+        socket.off("userUpdated", handleUserUpdated);
+      };
+    });
+  }, [selectedUser]);
+
   const handleChatDeleted = () => {
     setSelectedUser(null);
     setConversation(null);
@@ -98,6 +114,7 @@ export default function Chat() {
           <Sidebar
             setSelectedUser={setSelectedUser}
             setConversation={setConversation}
+            activeConversation={conversation}
             refreshTrigger={refreshSidebar}
             isMobile={isMobile}
           />

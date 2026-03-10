@@ -7,6 +7,7 @@ import {
   fetchChats,
   accessGlobalChat,
   deleteConversation,
+  markMessageAsRead,
 } from "../controllers/chatController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
@@ -19,6 +20,7 @@ router.get("/", fetchChats);
 router.get("/global", accessGlobalChat);
 router.post("/conversation", accessConversation);
 router.post("/message", sendMessage);
+router.put("/message/:id/read", markMessageAsRead);
 
 // Image upload with error handling
 router.post("/message/image", (req, res, next) => {

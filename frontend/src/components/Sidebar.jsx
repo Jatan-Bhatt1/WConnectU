@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import socket from "../sockets/socket";
 
-export default function Sidebar({ setSelectedUser, setConversation, refreshTrigger, isMobile }) {
+export default function Sidebar({ setSelectedUser, setConversation, activeConversation, refreshTrigger, isMobile }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [chats, setChats] = useState([]);
@@ -44,6 +45,80 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
     fetchChats();
   }, [setConversation, refreshTrigger]);
 
+  useEffect(() => {
+    const handleReceiveMessage = (message) => {
+      setChats((prevChats) => {
+        let chatExists = false;
+        const updatedChats = prevChats.map((chat) => {
+          if (chat._id === message.conversation) {
+            chatExists = true;
+            // Only increment if not actively looking at it AND we aren't the sender
+            const isUnread = activeConversation?._id !== chat._id && message.sender._id !== user._id;
+            return {
+              ...chat,
+              lastMessage: message,
+              unreadCount: isUnread ? (chat.unreadCount || 0) + 1 : chat.unreadCount || 0
+            };
+          }
+          return chat;
+        });
+
+        // Move updated chat to top
+        if (chatExists) {
+          updatedChats.sort((a, b) => {
+             const tA = new Date(a.lastMessage?.createdAt || a.updatedAt).getTime();
+             const tB = new Date(b.lastMessage?.createdAt || b.updatedAt).getTime();
+             return tB - tA;
+          });
+          return updatedChats;
+        }
+
+        // If it's a completely new chat we don't have, we should probably refetch
+        fetchChats();
+        return prevChats;
+      });
+    };
+
+    socket.on("receiveMessage", handleReceiveMessage);
+
+    return () => {
+      socket.off("receiveMessage", handleReceiveMessage);
+    };
+  }, [activeConversation, user]);
+
+  useEffect(() => {
+    const handleUserUpdate = (updatedUser) => {
+      // Update users list
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u._id === updatedUser.userId ? { ...u, avatar: updatedUser.avatar, name: updatedUser.name } : u
+        )
+      );
+
+      // Update chats list (participants)
+      setChats((prevChats) =>
+        prevChats.map((chat) => {
+          const updatedParticipants = chat.participants.map((p) =>
+            p._id === updatedUser.userId ? { ...p, avatar: updatedUser.avatar, name: updatedUser.name } : p
+          );
+          return { ...chat, participants: updatedParticipants };
+        })
+      );
+      
+      // Update User if it's the current user
+      if (updatedUser.userId === user._id) {
+          // This handled globally via context or similar, 
+          // but we can trust the layout refetch or context update for the footer.
+      }
+    };
+
+    socket.on("userUpdated", handleUserUpdate);
+
+    return () => {
+      socket.off("userUpdated", handleUserUpdate);
+    };
+  }, [user]);
+
   // Handle Tab Switch
   const handleTabChange = (tab) => {
     if (tab === "world") {
@@ -80,6 +155,10 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
     if (otherUser) {
       setSelectedUser(otherUser);
       setConversation(chat);
+      // Optimistically clear badge locally
+      setChats((prev) => 
+        prev.map((c) => c._id === chat._id ? { ...c, unreadCount: 0 } : c)
+      );
     }
   };
 
@@ -334,9 +413,13 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
                   {/* Avatar */}
                   <div
                     className="sidebar-avatar"
-                    style={{ background: getAvatarGradient(otherUser.name) }}
+                    style={{ 
+                      background: otherUser.avatar && !otherUser.avatar.includes("default")
+                        ? `url(${otherUser.avatar.startsWith('/uploads') ? `https://wconnectu.onrender.com${otherUser.avatar}` : otherUser.avatar}) center/cover`
+                        : getAvatarGradient(otherUser.name) 
+                    }}
                   >
-                    {otherUser.name.charAt(0).toUpperCase()}
+                    {(!otherUser.avatar || otherUser.avatar.includes("default")) && otherUser.name.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Info */}
@@ -346,7 +429,8 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
                     </div>
                     <div style={{
                       fontSize: "13px",
-                      color: "var(--user-text)",
+                      color: chat.unreadCount > 0 ? "white" : "var(--user-text)",
+                      fontWeight: chat.unreadCount > 0 ? "600" : "normal",
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -360,6 +444,27 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
                         : "Start a conversation"}
                     </div>
                   </div>
+
+                  {/* Badge */}
+                  {chat.unreadCount > 0 && (
+                    <div style={{
+                      minWidth: "20px",
+                      height: "20px",
+                      borderRadius: "10px",
+                      background: "#00d4aa", // WhatsApp style green
+                      color: "#fff",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 6px",
+                      marginLeft: "10px",
+                      boxShadow: "0 2px 5px rgba(0, 212, 170, 0.4)"
+                    }}>
+                      {chat.unreadCount}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -391,9 +496,13 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
                 >
                   <div
                     className="sidebar-avatar"
-                    style={{ background: getAvatarGradient(u.name) }}
+                    style={{ 
+                      background: u.avatar && !u.avatar.includes("default")
+                        ? `url(${u.avatar.startsWith('/uploads') ? `https://wconnectu.onrender.com${u.avatar}` : u.avatar}) center/cover`
+                        : getAvatarGradient(u.name) 
+                    }}
                   >
-                    {u.name.charAt(0).toUpperCase()}
+                    {(!u.avatar || u.avatar.includes("default")) && u.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div style={{ fontWeight: "600" }}>{u.name}</div>
@@ -439,7 +548,7 @@ export default function Sidebar({ setSelectedUser, setConversation, refreshTrigg
               fontSize: "0.9rem",
               marginRight: "0",
               background: user?.avatar
-                ? `url(https://wconnectu.onrender.com/${user.avatar}) center/cover`
+                ? `url(${user.avatar.startsWith('/uploads') ? `https://wconnectu.onrender.com` : ''}${user.avatar}) center/cover`
                 : getAvatarGradient(user?.name)
             }}
           >

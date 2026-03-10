@@ -13,10 +13,27 @@ export const fetchChats = async (req, res, next) => {
 
     const fullChats = await Conversation.populate(chats, {
       path: "lastMessage.sender",
-      select: "name email",
+      select: "name email avatar",
     });
 
-    res.json(fullChats);
+    // Calculate unread counts for each chat
+    const chatsWithUnreadCounts = await Promise.all(
+      fullChats.map(async (chat) => {
+        const unreadCount = await Message.countDocuments({
+          conversation: chat._id,
+          sender: { $ne: req.user._id },
+          status: { $ne: "read" },
+        });
+
+        // Convert Mongoose document to plain object to add custom field
+        return {
+          ...chat.toObject(),
+          unreadCount,
+        };
+      })
+    );
+
+    res.json(chatsWithUnreadCounts);
   } catch (error) {
     next(error);
   }
@@ -40,7 +57,7 @@ export const accessGlobalChat = async (req, res, next) => {
     if (globalChat.lastMessage) {
       await globalChat.populate({
         path: "lastMessage.sender",
-        select: "name email",
+        select: "name email avatar",
       });
     }
 
@@ -88,7 +105,7 @@ export const sendMessage = async (req, res, next) => {
       lastMessage: message._id,
     });
 
-    await message.populate("sender", "name email");
+    await message.populate("sender", "name email avatar");
 
     res.status(201).json(message);
   } catch (error) {
@@ -119,7 +136,7 @@ export const sendImageMessage = async (req, res, next) => {
       lastMessage: message._id,
     });
 
-    await message.populate("sender", "name email");
+    await message.populate("sender", "name email avatar");
 
     res.status(201).json(message);
   } catch (error) {
@@ -135,7 +152,7 @@ export const getMessages = async (req, res, next) => {
     const messages = await Message.find({
       conversation: conversationId,
     })
-      .populate("sender", "name email")
+      .populate("sender", "name email avatar")
       .sort({ createdAt: 1 });
 
     // Mark unread messages from OTHERS as read
@@ -160,6 +177,31 @@ export const getMessages = async (req, res, next) => {
     }
 
     res.json(messages);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// MARK SINGLE MESSAGE AS READ
+export const markMessageAsRead = async (req, res, next) => {
+  try {
+    const { id: messageId } = req.params;
+
+    const message = await Message.findById(messageId).populate("sender");
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    if (message.status !== "read" && message.sender._id.toString() !== req.user._id.toString()) {
+      message.status = "read";
+      await message.save();
+
+      // Notify the sender
+      req.io.to(message.sender._id.toString()).emit("messagesRead", { conversationId: message.conversation });
+    }
+
+    res.json(message);
   } catch (error) {
     next(error);
   }

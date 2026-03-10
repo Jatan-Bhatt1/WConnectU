@@ -101,6 +101,11 @@ export default function ChatWindow({ selectedUser, conversation, onDeleteChat, i
     socket.on("receiveMessage", (message) => {
       if (message.conversation === conversation?._id) {
         setMessages((prev) => [...prev, message]);
+
+        // If it's a new message from someone else in our active chat, instantly read it
+        if (message.sender._id !== user._id) {
+          api.put(`/api/chat/message/${message._id}/read`).catch(err => console.error("Could not mark read:", err));
+        }
       }
     });
 
@@ -114,9 +119,20 @@ export default function ChatWindow({ selectedUser, conversation, onDeleteChat, i
       }
     });
 
+    socket.on("userUpdated", (updatedUser) => {
+      setMessages((prev) => 
+        prev.map((msg) => 
+          msg.sender._id === updatedUser.userId 
+            ? { ...msg, sender: { ...msg.sender, avatar: updatedUser.avatar, name: updatedUser.name } }
+            : msg
+        )
+      );
+    });
+
     return () => {
       socket.off("receiveMessage");
       socket.off("messagesRead");
+      socket.off("userUpdated");
     };
   }, [conversation, user]);
 

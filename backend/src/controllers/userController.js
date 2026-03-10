@@ -163,6 +163,13 @@ export const updateAvatar = async (req, res, next) => {
       { new: true }
     ).select("-password");
 
+    // Emit event to all connected clients that this user has updated their info
+    req.io.emit("userUpdated", {
+      userId: user._id,
+      name: user.name,
+      avatar: user.avatar
+    });
+
     res.json(user);
   } catch (error) {
     next(error);
