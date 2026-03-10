@@ -180,7 +180,7 @@ export default function Profile() {
 
         /* Profile Responsive */
         .profile-page {
-          min-height: 100vh;
+          height: 100vh;
           background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
           position: relative;
           overflow-y: auto;
