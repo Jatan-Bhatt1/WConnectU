@@ -91,24 +91,33 @@ export default function Sidebar({ setSelectedUser, setConversation, activeConver
       // Update users list
       setUsers((prevUsers) =>
         prevUsers.map((u) =>
-          u._id === updatedUser.userId ? { ...u, avatar: updatedUser.avatar, name: updatedUser.name } : u
+          u._id === updatedUser.userId
+            ? { ...u, avatar: updatedUser.avatar, name: updatedUser.name }
+            : u
         )
       );
-
-      // Update chats list (participants)
+      // Update chats list (if name or avatar changed and we show it outfront)
+      // Usually, chats list just uses the participant data. So let's update that in state:
       setChats((prevChats) =>
-        prevChats.map((chat) => {
-          const updatedParticipants = chat.participants.map((p) =>
-            p._id === updatedUser.userId ? { ...p, avatar: updatedUser.avatar, name: updatedUser.name } : p
-          );
-          return { ...chat, participants: updatedParticipants };
-        })
+        prevChats.map((chat) => ({
+          ...chat,
+          participants: chat.participants.map((p) =>
+            p._id === updatedUser.userId
+              ? { ...p, avatar: updatedUser.avatar, name: updatedUser.name }
+              : p
+          ),
+        }))
       );
-      
-      // Update User if it's the current user
-      if (updatedUser.userId === user._id) {
-          // This handled globally via context or similar, 
-          // but we can trust the layout refetch or context update for the footer.
+    };
+
+    const handleNewUser = (newUser) => {
+      // Add the new user to the list if it's not the currently logged in person
+      if (newUser._id !== user._id) {
+        setUsers((prevUsers) => {
+          // Double check we don't already have them to avoid react key duplicates
+          if (prevUsers.some(u => u._id === newUser._id)) return prevUsers;
+          return [...prevUsers, newUser];
+        });
       }
     };
 

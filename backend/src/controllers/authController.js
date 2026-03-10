@@ -31,6 +31,14 @@ export const registerUser = async (req, res, next) => {
       password: hashedPassword,
     });
 
+    // Broadcast new user to all connected clients
+    req.io.emit("newUser", {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar || "default", // or however it's modeled locally
+    });
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
