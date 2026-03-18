@@ -190,22 +190,28 @@ export default function Register() {
           background: rgba(255,255,255,0.05);
           backdrop-filter: blur(30px);
           border-radius: 28px;
-          padding: 40px 40px;
+          padding: 40px 40px 34px;
           box-shadow: 0 25px 80px rgba(0,0,0,0.4);
           border: 1px solid rgba(255,255,255,0.1);
           position: relative;
-          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          max-height: 100%;
+          overflow-y: auto;
+          overflow-x: hidden;
         }
         .form-card::before {
           content: '';
           position: absolute;
           top: 0;
-          left: 0;
-          right: 0;
+          left: -1px;
+          right: -1px;
           height: 4px;
           background: linear-gradient(90deg, #00a884, #00d4aa, #00f2fe, #834dff, #00a884);
           background-size: 200% 100%;
           animation: gradient-shift 3s ease infinite;
+          border-radius: 28px 28px 0 0;
         }
         @keyframes gradient-shift {
           0% { background-position: 0% 50%; }
@@ -256,7 +262,7 @@ export default function Register() {
           align-items: center;
           padding: 40px;
           position: relative;
-          overflow-y: auto;
+          overflow: hidden;
         }
 
         @media (max-width: 1024px) {
@@ -274,6 +280,8 @@ export default function Register() {
         @media (max-width: 768px) {
           .register-container {
             flex-direction: column;
+            justify-content: flex-start;
+            padding: 24px 20px;
           }
           .register-left {
             display: none;
@@ -506,7 +514,7 @@ export default function Register() {
             filter: "blur(30px)"
           }} />
 
-          <div className="form-card" style={{ animation: "fadeInUp 0.6s ease", width: "100%", maxWidth: "400px" }}>
+          <div className="form-card" style={{ animation: "fadeInUp 0.6s ease", width: "100%", maxWidth: "400px", margin: "0 auto" }}>
             {/* Character SVG */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
               <svg ref={sceneRef} viewBox="0 0 320 230" style={{
@@ -583,7 +591,7 @@ export default function Register() {
               textAlign: "center"
             }}>Sign up to get started with WconnectU</p>
 
-            <form onSubmit={handleSubmit} autoComplete="off">
+            <form onSubmit={handleSubmit} autoComplete="off" style={{ marginTop: "4px" }}>
               <div style={{ marginBottom: "16px" }}>
                 <label className="input-label">
                   <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -675,7 +683,7 @@ export default function Register() {
             </form>
 
             <div style={{
-              marginTop: "24px",
+              marginTop: "6px",
               fontSize: "0.9rem",
               color: "rgba(255,255,255,0.6)",
               textAlign: "center"

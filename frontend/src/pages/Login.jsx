@@ -190,22 +190,28 @@ export default function Login() {
           background: rgba(255,255,255,0.05);
           backdrop-filter: blur(30px);
           border-radius: 32px;
-          padding: 50px 45px;
+          padding: 50px 45px 40px;
           box-shadow: 0 25px 80px rgba(0,0,0,0.4);
           border: 1px solid rgba(255,255,255,0.1);
           position: relative;
-          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          max-height: 100%;
+          overflow-y: auto;
+          overflow-x: hidden;
         }
         .form-card::before {
           content: '';
           position: absolute;
           top: 0;
-          left: 0;
-          right: 0;
+          left: -1px;
+          right: -1px;
           height: 4px;
           background: linear-gradient(90deg, #834dff, #ff9f43, #ffd400, #00a884, #834dff);
           background-size: 200% 100%;
           animation: gradient-shift 3s ease infinite;
+          border-radius: 32px 32px 0 0;
         }
         @keyframes gradient-shift {
           0% { background-position: 0% 50%; }
@@ -256,7 +262,7 @@ export default function Login() {
           align-items: center;
           padding: 40px;
           position: relative;
-          overflow-y: auto;
+          overflow: hidden;
         }
 
         @media (max-width: 1024px) {
@@ -274,6 +280,8 @@ export default function Login() {
         @media (max-width: 768px) {
           .login-container {
             flex-direction: column;
+            justify-content: flex-start;
+            padding: 24px 20px;
           }
           .login-left {
             display: none;
@@ -477,7 +485,7 @@ export default function Login() {
             filter: "blur(30px)"
           }} />
 
-          <div className="form-card" style={{ animation: "fadeInUp 0.6s ease", width: "100%", maxWidth: "400px" }}>
+          <div className="form-card" style={{ animation: "fadeInUp 0.6s ease", width: "100%", maxWidth: "400px", margin: "0 auto" }}>
             {/* Character SVG */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: "25px" }}>
               <svg ref={sceneRef} viewBox="0 0 320 230" style={{
@@ -554,7 +562,7 @@ export default function Login() {
               textAlign: "center"
             }}>Enter your credentials to access your account</p>
 
-            <form onSubmit={handleSubmit} autoComplete="off">
+            <form onSubmit={handleSubmit} autoComplete="off" style={{ marginTop: "4px" }}>
               <div style={{ marginBottom: "20px" }}>
                 <label className="input-label">
                   <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -628,7 +636,7 @@ export default function Login() {
             </form>
 
             <div style={{
-              marginTop: "28px",
+              marginTop: "8px",
               fontSize: "0.95rem",
               color: "rgba(255,255,255,0.6)",
               textAlign: "center"

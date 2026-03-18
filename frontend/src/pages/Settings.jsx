@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
   const { user, updateUser } = useAuth();
 
   const [privacy, setPrivacy] = useState({
@@ -184,55 +182,6 @@ export default function Settings() {
             }}>
               Settings
             </h1>
-          </motion.div>
-
-          {/* Appearance Section */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ scale: 1.01 }}
-            style={{
-              background: "rgba(255,255,255,0.05)", backdropFilter: "blur(30px)",
-              borderRadius: "20px", padding: "28px",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 15px 50px rgba(0,0,0,0.3)",
-              marginBottom: "20px", position: "relative", overflow: "hidden"
-            }}
-          >
-            <div style={{
-              position: "absolute", top: 0, left: 0, right: 0, height: "3px",
-              background: "linear-gradient(90deg, #834dff, #a855f7)"
-            }} />
-            <h3 style={{
-              margin: "0 0 20px", fontSize: "1.15rem", fontWeight: "700",
-              color: "#834dff", display: "flex", alignItems: "center", gap: "10px"
-            }}>
-              <span style={{ fontSize: "1.3rem" }}>🎨</span> Appearance
-            </h3>
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "12px 0"
-            }}>
-              <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: "500" }}>Theme</span>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleTheme}
-                style={{
-                  padding: "10px 20px", borderRadius: "25px",
-                  border: "1px solid rgba(131,77,255,0.3)",
-                  background: theme === "light"
-                    ? "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)"
-                    : "linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)",
-                  color: "white", fontWeight: "600", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: "10px",
-                  boxShadow: theme === "light"
-                    ? "0 4px 20px rgba(251,191,36,0.4)"
-                    : "0 4px 20px rgba(15,23,42,0.4)"
-                }}
-              >
-                {theme === "light" ? "☀️ Light Mode" : "🌙 Dark Mode"}
-              </motion.button>
-            </div>
           </motion.div>
 
           {/* Notifications Section */}

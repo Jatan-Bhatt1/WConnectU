@@ -1,47 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import api from "../api/axios";
 import socket from "../sockets/socket";
 import { useAuth } from "../context/AuthContext";
-
-// Emoji categories with popular emojis
-const emojiCategories = {
-  "😊 Smileys": [
-    "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "😊",
-    "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙", "🥲", "😋",
-    "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐",
-    "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "🤥", "😌",
-    "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧"
-  ],
-  "❤️ Hearts": [
-    "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
-    "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "♥️"
-  ],
-  "👋 Gestures": [
-    "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞",
-    "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍",
-    "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🙏"
-  ],
-  "🎉 Celebration": [
-    "🎉", "🎊", "🎈", "🎁", "🎂", "🍰", "🧁", "🥳", "🪅", "🎆",
-    "🎇", "✨", "🎄", "🎃", "🎗️", "🎟️", "🎫", "🏆", "🥇", "🏅"
-  ],
-  "🔥 Popular": [
-    "🔥", "💯", "✅", "⭐", "🌟", "💫", "⚡", "💥", "💢", "💤",
-    "💨", "💦", "🎵", "🎶", "🎤", "🎧", "📱", "💻", "🖥️", "⌨️"
-  ],
-  "🐱 Animals": [
-    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
-    "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🦆", "🦅"
-  ],
-  "🍕 Food": [
-    "🍕", "🍔", "🍟", "🌭", "🍿", "🧂", "🥓", "🥚", "🍳", "🧇",
-    "🥞", "🧈", "🍞", "🥐", "🥨", "🧀", "🥗", "🍝", "🍜", "🍲"
-  ],
-  "⚽ Sports": [
-    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱",
-    "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🏹", "🎣"
-  ]
-};
 
 // Counter for temporary IDs
 let tempIdCounter = 0;
@@ -55,7 +17,6 @@ export default function MessageInput({
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("😊 Smileys");
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [imageCaption, setImageCaption] = useState("");
@@ -393,106 +354,19 @@ export default function MessageInput({
             borderRadius: "20px",
             boxShadow: "0 15px 50px rgba(0, 0, 0, 0.5)",
             border: "1px solid rgba(255,255,255,0.15)",
-            display: "flex",
-            flexDirection: "column",
             overflow: "hidden",
             animation: "slideUp 0.3s ease-out",
             zIndex: 1000,
           }}
         >
-          {/* Category Tabs */}
-          <div
-            style={{
-              display: "flex",
-              overflowX: "auto",
-              borderBottom: "1px solid var(--sidebar-border)",
-              padding: "8px 8px 0",
-              gap: "4px",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
-          >
-            {Object.keys(emojiCategories).map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                style={{
-                  padding: "8px 12px",
-                  border: "none",
-                  background: activeCategory === category
-                    ? "var(--primary-color)"
-                    : "transparent",
-                  borderRadius: "8px 8px 0 0",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
-                  color: activeCategory === category
-                    ? "white"
-                    : "var(--text-color)",
-                  whiteSpace: "nowrap",
-                  transition: "all 0.2s ease",
-                  fontWeight: activeCategory === category ? "600" : "400",
-                }}
-              >
-                {category.split(" ")[0]}
-              </button>
-            ))}
-          </div>
-
-          {/* Category Label */}
-          <div
-            style={{
-              padding: "10px 14px 6px",
-              fontSize: "0.8rem",
-              fontWeight: "600",
-              color: "var(--user-text)",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-            }}
-          >
-            {activeCategory}
-          </div>
-
-          {/* Emoji Grid */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: "0 10px 10px",
-              display: "grid",
-              gridTemplateColumns: "repeat(8, 1fr)",
-              gap: "4px",
-              alignContent: "start",
-            }}
-          >
-            {emojiCategories[activeCategory].map((emoji, index) => (
-              <button
-                key={index}
-                onClick={() => handleEmojiClick(emoji)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: "1.5rem",
-                  padding: "6px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--hover-bg)";
-                  e.currentTarget.style.transform = "scale(1.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
+          <Picker
+            data={data}
+            onEmojiSelect={(emoji) => handleEmojiClick(emoji.native)}
+            theme="dark"
+            previewPosition="none"
+            skinTonePosition="none"
+            searchPosition="top"
+          />
         </div>
       )}
 
